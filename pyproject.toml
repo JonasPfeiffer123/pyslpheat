@@ -1,0 +1,57 @@
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name        = "pyslpheat"
+version     = "0.1.0"
+description = "BDEW and VDI 4655 heat demand load profiles for district heating simulations"
+readme      = "README.md"
+requires-python = ">=3.9"
+license     = { file = "LICENSE" }
+authors     = [{ name = "Jonas Pfeiffer" }]
+
+keywords = [
+    "heat-demand", "load-profile", "BDEW", "SigLinDe", "VDI4655",
+    "district-heating", "energy", "simulation", "standard-load-profile",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+]
+
+[project.urls]
+Repository    = "https://github.com/JonasPfeiffer123/pyslpheat"
+Documentation = "https://github.com/JonasPfeiffer123/pyslpheat/blob/main/docs/DOCUMENTATION.md"
+"Bug Tracker" = "https://github.com/JonasPfeiffer123/pyslpheat/issues"
+
+[project.optional-dependencies]
+dev = ["matplotlib>=3.7"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyslpheat*"]
+
+[tool.setuptools.package-data]
+pyslpheat = [
+    "data/bdew/*.csv",
+    "data/vdi4655/*.csv",
+    "data/vdi4655/load_profiles/*.csv",
+    "data/try/*.dat",
+    "images/*",
+]
