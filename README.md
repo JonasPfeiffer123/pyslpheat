@@ -72,7 +72,7 @@ The table below covers the actively maintained, pip/conda-installable tools.
 | **[oemof-demand](https://github.com/oemof/demandlib)** | `pip install oemof-demand` | BDEW SLP, VDI 4655 | building\_class 1–11, wind\_class 0/1 | BDEW hourly factors | ✗ | ✗ | ✗ | ✗ |
 | **[when2heat](https://github.com/oruhnau/when2heat)** | pip from repo | BDEW SLP | SFH / MFH / COM only | BGW hourly factors | ✗ | ✗ | ✗ | ✗ |
 | **[lpagg](https://github.com/jnettels/lpagg)** | conda | VDI 4655 | EFH / MFH | 15-min day-type profiles | ✗ | ✗ | ✓ random time-shift | ✗ |
-| **[DistrictHeatingSim](https://github.com/JonasPfeiffer123/DistrictHeatingSim)** | pip from repo | BDEW SigLinDe, VDI 4655 | HEF/HMF 03–05, 33/34; all G-types | BGW hourly factors | ✓ Mode B/C | ✓ | ✓ | ✗ |
+| **[DistrictHeatingSim](https://github.com/JonasPfeiffer123/DistrictHeatingSim)** | pip from repo | BDEW SigLinDe, VDI 4655 | HEF/HMF 03–05, 33/34; all G-types | BGW hourly factors | ✗ | ✗ | ✗ | ✗ |
 
 ### Broader ecosystem
 
