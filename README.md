@@ -69,7 +69,7 @@ The table below covers the actively maintained, pip/conda-installable tools.
 | Package | Install | Standards | Subtypes | Hourly shape | Peak scaling | Heating limit | Stochastic | TRY bundled |
 |---|---|---|---|---|---|---|---|---|
 | **pyslpheat** (this) | `pip install .` | BDEW SigLinDe, VDI 4655 | HEF/HMF 03–05, 33/34; all G-types 01–05, 33/34 | BGW hourly factors | ✓ Mode B/C (β-bisection) | ✓ | ✓ peak jitter + log-normal | ✓ 6 files (2015/2045 ×3) |
-| **[demandlib](https://github.com/oemof/demandlib)** | `pip install demandlib` | BDEW SLP, VDI 4655 | building\_class 1–11, wind\_class 0/1 | BDEW hourly factors | ✗ | ✗ | ✗ | ✗ |
+| **[oemof-demand](https://github.com/oemof/demandlib)** | `pip install oemof-demand` | BDEW SLP, VDI 4655 | building\_class 1–11, wind\_class 0/1 | BDEW hourly factors | ✗ | ✗ | ✗ | ✗ |
 | **[when2heat](https://github.com/oruhnau/when2heat)** | pip from repo | BDEW SLP | SFH / MFH / COM only | BGW hourly factors | ✗ | ✗ | ✗ | ✗ |
 | **[lpagg](https://github.com/jnettels/lpagg)** | conda | VDI 4655 | EFH / MFH | 15-min day-type profiles | ✗ | ✗ | ✓ random time-shift | ✗ |
 | **[DistrictHeatingSim](https://github.com/JonasPfeiffer123/DistrictHeatingSim)** | pip from repo | BDEW SigLinDe, VDI 4655 | HEF/HMF 03–05, 33/34; all G-types | BGW hourly factors | ✓ Mode B/C | ✓ | ✓ | ✗ |
