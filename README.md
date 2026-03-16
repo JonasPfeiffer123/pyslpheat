@@ -6,7 +6,7 @@ heat demand profile standards for district heating simulations.
 | Module | Standard | Resolution | Method |
 |--------|----------|------------|--------|
 | `bdew` | BDEW/VKU/GEODE SigLinDe | Hourly | Temperature-continuous sigmoid + linear |
-| `vdi4655` | VDI 4655 (May 2008) | 15-minute | Day-type step profiles |
+| `vdi4655` | VDI 4655 | 15-minute | Day-type step profiles |
 
 ## Installation
 
