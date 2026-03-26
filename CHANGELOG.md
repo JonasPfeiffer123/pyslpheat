@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] — 2026-03-26
+
+### Added
+- PyQt6 desktop GUI (`pyslpheat-gui`) covering the full parameter set of both
+  modules — no scripting required
+- `[gui]` optional dependency group: `PyQt6>=6.5`, `matplotlib>=3.7`
+- `pyslpheat-gui` console script entry point registered via `pyproject.toml`
+- Automatic import of statutory German public holidays via `compute_holidays`
+  in the VDI 4655 tab
+- Embedded matplotlib plot with navigation toolbar; CSV export for all results
+
+### Fixed
+- `building_type = "B"` (office) was missing from the VDI 4655 parameter
+  table in `docs/DOCUMENTATION.md`
+
 ## [0.1.0] — 2026-03-16
 
 ### Added

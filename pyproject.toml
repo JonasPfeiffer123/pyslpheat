@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name        = "pyslpheat"
-version     = "0.1.0"
+version     = "0.2.0"
 description = "BDEW and VDI 4655 heat demand load profiles for district heating simulations"
 readme      = "README.md"
 requires-python = ">=3.9"
