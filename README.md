@@ -38,6 +38,36 @@ Both functions return a `pandas.DataFrame` with a `DatetimeIndex` and columns
 `Q_heat_kWh`, `Q_dhw_kWh`, `Q_total_kWh`, `temperature_C`
 (VDI 4655 additionally includes `Q_electricity_kWh`).
 
+## GUI – no scripting required
+
+pyslpheat ships a desktop application that lets you configure all parameters
+interactively, inspect the resulting load profile in an embedded plot, and
+export results as CSV — without writing a single line of code.
+
+**Install with GUI dependencies:**
+
+```bash
+pip install ".[gui]"
+```
+
+**Launch:**
+
+```bash
+pyslpheat-gui
+```
+
+The application has two tabs — one for each calculation standard:
+
+| Tab | Standard | Output resolution |
+|-----|----------|-------------------|
+| BDEW SigLinDe | BDEW/VKU/GEODE SigLinDe | Hourly (8 760 values) |
+| VDI 4655 | VDI 4655 | 15-minute (35 040 values) |
+
+Both tabs offer the full parameter set including stochastic post-processing
+(BDEW) and automatic import of statutory German public holidays (VDI 4655).
+The six bundled Bautzen TRY files are selectable from a drop-down; custom
+TRY files can be loaded via a file browser.
+
 ## Demo scripts
 
 ```bash
