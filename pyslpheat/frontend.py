@@ -85,7 +85,6 @@ SUBTYPE_LABELS = {
 VDI_BUILDING_TYPES = {
     "EFH – Einfamilienhaus": "EFH",
     "MFH – Mehrfamilienhaus": "MFH",
-    "B – Büro": "B",
 }
 
 

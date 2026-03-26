@@ -217,7 +217,7 @@ def standardized_quarter_hourly_profile(year: int,
 
     :param year: Target year
     :type year: int
-    :param building_type: VDI 4655 type (EFH, MFH, B)
+    :param building_type: VDI 4655 type (EFH, MFH)
     :type building_type: str
     :param days_of_year: Daily datetime64 array
     :type days_of_year: np.ndarray
@@ -315,7 +315,7 @@ def calculation_load_profile(TRY: str,
 
     :param TRY: Path to Test Reference Year data
     :type TRY: str
-    :param building_type: VDI 4655 type (EFH, MFH, B)
+    :param building_type: VDI 4655 type (EFH, MFH)
     :type building_type: str
     :param number_people_household: Number of occupants
     :type number_people_household: int
@@ -439,7 +439,7 @@ def calculate(annual_heating_kWh: float,
     :type annual_dhw_kWh: float
     :param annual_electricity_kWh: Annual electricity [kWh/a]
     :type annual_electricity_kWh: float
-    :param building_type: VDI 4655 type (EFH, MFH, B)
+    :param building_type: VDI 4655 type (EFH, MFH)
     :type building_type: str
     :param number_people_household: Number of occupants
     :type number_people_household: int
@@ -466,7 +466,7 @@ def calculate(annual_heating_kWh: float,
     if number_people_household <= 0:
         raise ValueError("Number of people in household must be positive")
     
-    valid_building_types = ["EFH", "MFH", "B"]
+    valid_building_types = ["EFH", "MFH"]
     if building_type not in valid_building_types:
         raise ValueError(f"Building type must be one of {valid_building_types}")
     
