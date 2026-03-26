@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] — 2026-03-26
+
+### Added
+- Discrete DHW draw events (`dhw_draw_events=True`) in `bdew.calculate()`:
+  replaces the smooth BDEW DHW baseline with stochastic clustered draw events
+  (bimodal morning/evening, Poisson draw count per day, log-normal amplitude);
+  annual DHW energy preserved by renormalisation
+- New parameters: `dhw_draws_per_day` (float, default 4.0) and `dhw_draw_seed`
+  (int, default 42), independent of the existing `stochastic_seed`
+- BDEW GUI tab: new "Diskrete TWW-Zapfereignisse" group with checkbox and
+  sub-parameters (same enable/disable pattern as Stochastik group)
+- Documentation: new section *Discrete DHW draw events* in `docs/DOCUMENTATION.md`
+
 ## [0.2.0] — 2026-03-26
 
 ### Added
