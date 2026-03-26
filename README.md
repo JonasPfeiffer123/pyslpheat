@@ -68,6 +68,14 @@ Both tabs offer the full parameter set including stochastic post-processing
 The six bundled Bautzen TRY files are selectable from a drop-down; custom
 TRY files can be loaded via a file browser.
 
+**BDEW SigLinDe tab**
+
+![BDEW SigLinDe tab](docs/img/pyslpheat_gui_BDEW.jpg)
+
+**VDI 4655 tab**
+
+![VDI 4655 tab](docs/img/pyslpheat_gui_VDI4655.jpg)
+
 ## Demo scripts
 
 ```bash

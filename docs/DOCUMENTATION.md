@@ -466,6 +466,46 @@ longitude (2 integer + 4 decimal).
 
 ---
 
+## GUI – Desktop-Anwendung
+
+pyslpheat enthält eine grafische Oberfläche (PyQt6), die den vollständigen
+Parametersatz beider Module ohne Scripting zugänglich macht.
+
+### Installation & Start
+
+```bash
+pip install ".[gui]"   # PyQt6 + matplotlib werden mitinstalliert
+pyslpheat-gui
+```
+
+### BDEW SigLinDe-Tab
+
+![BDEW SigLinDe tab](img/pyslpheat_gui_BDEW.jpg)
+
+Alle Parameter aus `bdew_calculate()` sind einstellbar: Profiltyp, Subtyp,
+Skalierungsmodus (Jahresenergie / Auslegungslast / Beides), Wärmeverteilung
+(TWW-Anteil, Heizgrenztemperatur, Heizexponent, flache TWW-Verteilung) und
+stochastische Nachbearbeitung (Seed, σ-Werte, max. Peak-Verschiebung).
+
+### VDI 4655-Tab
+
+![VDI 4655 tab](img/pyslpheat_gui_VDI4655.jpg)
+
+Alle Parameter aus `vdi4655_calculate()` sind einstellbar: Gebäudetyp,
+Personenzahl, Jahr, Klimazone, Jahresenergien für Raumwärme, TWW und Strom.
+Feiertage können manuell eingegeben oder per Knopfdruck als gesetzliche
+deutsche Feiertage für das gewählte Jahr automatisch befüllt werden.
+
+### Gemeinsame Funktionen
+
+- TRY-Auswahl: alle sechs gebündelten Bautzen-Dateien per Dropdown, plus
+  Dateibrowser für eigene TRY-Dateien
+- Eingebetteter Matplotlib-Plot mit Navigationstoolbar (Zoom, Pan, Speichern)
+- CSV-Export der Ergebnisse (Semikolon-getrennt, Dezimalkomma)
+- Berechnung läuft im Hintergrund-Thread — kein GUI-Freeze bei langen Läufen
+
+---
+
 ## References
 
 ### BDEW module
