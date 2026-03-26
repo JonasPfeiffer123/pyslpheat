@@ -19,6 +19,7 @@ Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 
      - [Flat DHW distribution](#flat-dhw-distribution-dhw_flat)
      - [Scaling modes](#scaling-modes-peak_design_kw--design_temperature)
      - [Stochastic post-processing](#stochastic-post-processing)
+     - [Discrete DHW draw events](#discrete-dhw-draw-events-dhw_draw_events)
 3. [VDI 4655 module](#vdi-4655-module)
    - [Standard call](#standard-call-1)
    - [Return value](#return-value-1)
@@ -308,6 +309,44 @@ space heating.
 > similar temperature produce near-identical curves. Stochastic post-processing
 > adds realistic day-to-day variability for network transient simulations
 > without violating the annual energy constraint.
+
+---
+
+#### Discrete DHW draw events (`dhw_draw_events`)
+
+```python
+df = bdew_calculate(
+    ...,
+    dhw_draw_events  = True,
+    dhw_draws_per_day= 4.0,   # expected draw events per day (Poisson rate)
+    dhw_draw_seed    = 42,
+)
+```
+
+Replaces the smooth BDEW DHW baseline with **stochastic clustered draw events**,
+moving further away from the statistical average profile towards realistic
+individual-building behaviour.
+
+**Draw model:**
+
+| Property | Distribution |
+|---|---|
+| Draws per day | Poisson(`dhw_draws_per_day`) |
+| Draw start | Bimodal: 60 % morning (05–09 h), 40 % evening (17–22 h) |
+| Duration | Uniform(1, 3 h) contiguous block |
+| Amplitude | Log-normal(μ=0, σ=0.4), capped at 2× |
+
+Hours outside of draw blocks are set to zero, producing realistic zero-load gaps
+between events.  Annual DHW energy is preserved by renormalisation.
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `dhw_draws_per_day` | `4.0` | More draws → smoother; fewer → larger gaps and spikes |
+| `dhw_draw_seed` | `42` | Independent of `stochastic_seed`; set to different values to compare realisations |
+
+> **Note:** `dhw_draw_events` is applied after `stochastic` post-processing.
+> Combining both is valid but activating `dhw_draw_events` already provides
+> sufficient DHW variability for most use cases.
 
 ---
 
