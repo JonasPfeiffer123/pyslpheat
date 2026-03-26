@@ -390,6 +390,35 @@ class BDEWTab(QWidget):
         self._stoch_params.setEnabled(False)
         self.stoch_cb.toggled.connect(self._stoch_params.setEnabled)
 
+        # Diskrete TWW-Zapfereignisse
+        grp5 = QGroupBox("Diskrete TWW-Zapfereignisse")
+        vbox5 = QVBoxLayout(grp5)
+
+        self.dhw_draw_cb = QCheckBox("Diskrete Zapfereignisse aktivieren")
+        vbox5.addWidget(self.dhw_draw_cb)
+
+        self._dhw_draw_params = QWidget()
+        dhw_draw_form = QFormLayout(self._dhw_draw_params)
+        dhw_draw_form.setContentsMargins(0, 0, 0, 0)
+
+        self.dhw_draws_per_day_spin = QDoubleSpinBox()
+        self.dhw_draws_per_day_spin.setRange(0.5, 20.0)
+        self.dhw_draws_per_day_spin.setValue(4.0)
+        self.dhw_draws_per_day_spin.setSingleStep(0.5)
+        self.dhw_draws_per_day_spin.setDecimals(1)
+        dhw_draw_form.addRow("Zapfvorgänge pro Tag (Ø):", self.dhw_draws_per_day_spin)
+
+        self.dhw_draw_seed_spin = QSpinBox()
+        self.dhw_draw_seed_spin.setRange(0, 999999)
+        self.dhw_draw_seed_spin.setValue(42)
+        dhw_draw_form.addRow("Seed:", self.dhw_draw_seed_spin)
+
+        vbox5.addWidget(self._dhw_draw_params)
+        left_layout.addWidget(grp5)
+
+        self._dhw_draw_params.setEnabled(False)
+        self.dhw_draw_cb.toggled.connect(self._dhw_draw_params.setEnabled)
+
         # Buttons & Status
         self.run_btn = QPushButton("Berechnen")
         self.run_btn.setFixedHeight(34)
@@ -455,6 +484,9 @@ class BDEWTab(QWidget):
             "stochastic_sigma_dhw": self.sigma_dhw_spin.value(),
             "stochastic_max_shift_sh":  self.shift_sh_spin.value(),
             "stochastic_max_shift_dhw": self.shift_dhw_spin.value(),
+            "dhw_draw_events":          self.dhw_draw_cb.isChecked(),
+            "dhw_draws_per_day":        self.dhw_draws_per_day_spin.value(),
+            "dhw_draw_seed":            self.dhw_draw_seed_spin.value(),
         }
 
     def _run(self):
