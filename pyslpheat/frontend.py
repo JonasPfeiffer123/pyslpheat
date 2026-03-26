@@ -751,7 +751,7 @@ def main():
     app.setApplicationName("pyslpheat")
     app.setOrganizationName("HSZG Energiespeicher")
     window = MainWindow()
-    window.show()
+    window.showMaximized()
     sys.exit(app.exec())
 
 
