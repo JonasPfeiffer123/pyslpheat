@@ -25,7 +25,7 @@ import os as _os
 from .bdew    import calculate as bdew_calculate      # noqa: F401
 from .vdi4655 import calculate as vdi4655_calculate   # noqa: F401
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__  = "Jonas Pfeiffer"
 
 __all__ = [

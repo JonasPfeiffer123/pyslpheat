@@ -35,11 +35,23 @@ Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 
 pip install .          # from the package root
 # or editable install during development:
 pip install -e .
+
+# with GUI (PyQt6 desktop application):
+pip install ".[gui]"
 ```
 
 ```python
 from pyslpheat import bdew_calculate, vdi4655_calculate
 ```
+
+**GUI – no scripting required**
+
+```bash
+pyslpheat-gui          # launches the desktop application
+```
+
+The application covers the complete parameter set of both modules.
+See [README.md](../README.md) for details.
 
 ---
 
@@ -356,7 +368,7 @@ df_hourly = df[["Q_heat_kWh", "Q_dhw_kWh", "Q_total_kWh"]].resample("h").sum()
 | `annual_heating_kWh` | float | Annual space heating demand [kWh/a] |
 | `annual_dhw_kWh` | float | Annual DHW demand [kWh/a] |
 | `annual_electricity_kWh` | float | Annual electricity demand [kWh/a] — required by the VDI 4655 day-type scaling, included in output |
-| `building_type` | `"EFH"`, `"MFH"` | Single-family, multi-family |
+| `building_type` | `"EFH"`, `"MFH"`, `"B"` | Single-family, multi-family, office |
 | `number_people_household` | int | Number of occupants (EFH) or dwelling units (MFH) — scales the day-type energy factors |
 | `year` | int | Calculation year |
 | `climate_zone` | str `"1"`–`"15"` | DWD climate zone; zone 9 = central Germany |
