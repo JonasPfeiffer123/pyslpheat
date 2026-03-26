@@ -368,7 +368,7 @@ df_hourly = df[["Q_heat_kWh", "Q_dhw_kWh", "Q_total_kWh"]].resample("h").sum()
 | `annual_heating_kWh` | float | Annual space heating demand [kWh/a] |
 | `annual_dhw_kWh` | float | Annual DHW demand [kWh/a] |
 | `annual_electricity_kWh` | float | Annual electricity demand [kWh/a] — required by the VDI 4655 day-type scaling, included in output |
-| `building_type` | `"EFH"`, `"MFH"`, `"B"` | Single-family, multi-family, office |
+| `building_type` | `"EFH"`, `"MFH"` | Single-family, multi-family |
 | `number_people_household` | int | Number of occupants (EFH) or dwelling units (MFH) — scales the day-type energy factors |
 | `year` | int | Calculation year |
 | `climate_zone` | str `"1"`–`"15"` | DWD climate zone; zone 9 = central Germany |
