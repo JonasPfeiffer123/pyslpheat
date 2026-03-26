@@ -344,6 +344,61 @@ def _apply_lognormal_noise(series: pd.Series, sigma: float, rng: np.random.Gener
     return pd.Series(noisy, index=series.index)
 
 
+def _apply_dhw_draw_events(
+    dhw: pd.Series,
+    draws_per_day: float,
+    seed: int,
+) -> pd.Series:
+    """
+    Replace the smooth BDEW DHW timeseries with clustered stochastic draw events.
+
+    Draw model:
+
+    - Draws per day  ~ Poisson(draws_per_day)
+    - Draw start hour ~ bimodal: 60 % morning (05–09 h), 40 % evening (17–22 h)
+    - Draw duration  ~ Uniform(1, 3 h) contiguous block, same amplitude per block
+    - Block amplitude ~ log-normal(mu=0, sigma=0.4), cap 2.0
+    - Hours between draws stay at zero → realistic zero-load gaps
+
+    Total DHW energy is preserved by normalisation.
+
+    :param dhw: Hourly DHW series with DatetimeIndex
+    :param draws_per_day: Expected number of draw events per day (Poisson rate)
+    :param seed: RNG seed for reproducibility
+    :return: Replaced DHW series with identical annual sum
+    """
+    rng = np.random.default_rng(seed)
+    original_dhw = dhw.sum()
+
+    new_dhw = np.zeros(len(dhw))
+    days = pd.Series(dhw.index.date).unique()
+    hour_index = {ts: i for i, ts in enumerate(dhw.index)}
+
+    for day in days:
+        n_draws = rng.poisson(draws_per_day)
+        for _ in range(n_draws):
+            if rng.random() < 0.60:
+                start_h = int(rng.uniform(5, 9))    # morning window
+            else:
+                start_h = int(rng.uniform(17, 22))  # evening window
+
+            duration = int(rng.uniform(1, 4))            # 1–3 h contiguous block
+            amp = min(rng.lognormal(0.0, 0.4), 2.0)     # same amplitude across block
+
+            for dh in range(duration):
+                h  = (start_h + dh) % 24
+                ts = pd.Timestamp(year=day.year, month=day.month,
+                                  day=day.day, hour=h)
+                if ts in hour_index:
+                    new_dhw[hour_index[ts]] += amp
+
+    total = new_dhw.sum()
+    if total > 0:
+        new_dhw *= original_dhw / total
+
+    return pd.Series(new_dhw, index=dhw.index, dtype=float)
+
+
 def calculate(annual_heat_kWh: Optional[float],
              profile_type: str,
              subtype: str,
@@ -360,7 +415,10 @@ def calculate(annual_heat_kWh: Optional[float],
              stochastic_sigma_sh: float = 0.12,
              stochastic_sigma_dhw: float = 0.20,
              stochastic_max_shift_sh: int = 1,
-             stochastic_max_shift_dhw: int = 2) -> pd.DataFrame:
+             stochastic_max_shift_dhw: int = 2,
+             dhw_draw_events: bool = False,
+             dhw_draws_per_day: float = 4.0,
+             dhw_draw_seed: int = 42) -> pd.DataFrame:
     """
     Calculate heat demand profiles using BDEW Standard Load Profile methodology.
 
@@ -427,6 +485,16 @@ def calculate(annual_heat_kWh: Optional[float],
     :type stochastic_max_shift_sh: int
     :param stochastic_max_shift_dhw: Max daily peak shift [h] for DHW.
     :type stochastic_max_shift_dhw: int
+    :param dhw_draw_events: Replace the smooth BDEW DHW timeseries with stochastic
+        discrete draw events (bimodal morning/evening peaks, Poisson draw count per day).
+        Annual DHW energy is preserved by renormalisation.  Moves further away from the
+        BDEW average profile towards realistic individual-building behaviour.
+    :type dhw_draw_events: bool
+    :param dhw_draws_per_day: Expected number of draw events per day (Poisson rate).
+        Typical range: 3–8 for residential buildings.
+    :type dhw_draws_per_day: float
+    :param dhw_draw_seed: RNG seed for DHW draw events (independent of stochastic_seed).
+    :type dhw_draw_seed: int
     :return: DataFrame with DatetimeIndex and columns
         ``Q_heat_kWh``, ``Q_dhw_kWh``, ``Q_total_kWh``, ``temperature_C``.
     :rtype: pd.DataFrame
@@ -721,6 +789,12 @@ def calculate(annual_heat_kWh: Optional[float],
         dhw = _apply_peak_jitter(dhw, stochastic_max_shift_dhw, rng)
         sh  = _apply_lognormal_noise(sh,  stochastic_sigma_sh,  rng)
         dhw = _apply_lognormal_noise(dhw, stochastic_sigma_dhw, rng)
+
+    # ── Optional discrete DHW draw events ─────────────────────────────────────
+    # Replaces the smooth DHW timeseries with clustered stochastic events.
+    # Applied after stochastic so that the annual energy target is always met.
+    if dhw_draw_events:
+        dhw = _apply_dhw_draw_events(dhw, dhw_draws_per_day, dhw_draw_seed)
 
     return pd.DataFrame({
         "Q_heat_kWh":    sh,

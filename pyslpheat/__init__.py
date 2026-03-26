@@ -10,6 +10,8 @@ bdew
     Supports annual-energy scaling (Mode A), design-load scaling (Mode B),
     and combined scaling (Mode C). Optional stochastic post-processing
     (peak jitter + log-normal noise) via ``stochastic=True``.
+    Optional discrete DHW draw events (bimodal clustering, Poisson count)
+    via ``dhw_draw_events=True``.
 
 vdi4655
     VDI 4655 methodology (15-min, day-type based).
@@ -25,7 +27,7 @@ import os as _os
 from .bdew    import calculate as bdew_calculate      # noqa: F401
 from .vdi4655 import calculate as vdi4655_calculate   # noqa: F401
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__  = "Jonas Pfeiffer"
 
 __all__ = [
