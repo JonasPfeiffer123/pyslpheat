@@ -383,15 +383,8 @@ def _hourly_factor_tables() -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarra
         weekdays, w = np.unique(rows['Wochentag'].values, return_inverse=True)
         temperatures, t = np.unique(rows['Temperatur'].values, return_inverse=True)
         hours, h = np.unique(rows['Stunde'].values, return_inverse=True)
-        factors = rows['Stundenfaktor'].values
-        try:
-            factors = factors.astype(float)
-        except ValueError:
-            # Entries that are not numbers stay text and fail when they are used
-            factors = factors.astype(object)
-        table = np.full((len(weekdays), len(temperatures), len(hours)), np.nan,
-                        dtype=factors.dtype)
-        table[w, t, h] = factors
+        table = np.full((len(weekdays), len(temperatures), len(hours)), np.nan)
+        table[w, t, h] = rows['Stundenfaktor'].values.astype(float)
         tables[profile_type] = tuple(
             read_only(a) for a in (weekdays, temperatures, hours, table))
     return tables
@@ -420,7 +413,6 @@ def _hourly_factors(profile_type: str,
     :type temperature_class: np.ndarray
     :return: Hourly factors; NaN where the table has no entry
     :rtype: np.ndarray
-    :raises ValueError: If a selected table entry is not a number
     """
     table = _hourly_factor_tables().get(profile_type)
     if table is None:
@@ -431,7 +423,7 @@ def _hourly_factors(profile_type: str,
     w, w_found = (np.repeat(a, 24) for a in _positions(weekdays, daily_weekdays))
     h, h_found = (np.tile(a, num_days) for a in _positions(hours, np.arange(24)))
     t, t_found = _positions(temperatures, temperature_class)
-    return np.where(w_found & t_found & h_found, factors[w, t, h], np.nan).astype(float)
+    return np.where(w_found & t_found & h_found, factors[w, t, h], np.nan)
 
 def _apply_peak_jitter(series: pd.Series, max_shift: int, rng: np.random.Generator) -> pd.Series:
     """

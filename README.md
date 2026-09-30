@@ -106,7 +106,7 @@ and thread safety are described in
 
 ## Known issues
 
-The test suite pins the current behaviour of the first three items
+The test suite pins the current behaviour of the first two items
 (`tests/golden_cases.py`), so fixing one of them shows up there as an intended
 change.
 
@@ -115,11 +115,6 @@ change.
   `bdew_calculate` and `vdi4655_calculate` both raise
   `ValueError: operands could not be broadcast together with shapes (365,) (366,)`.
   Use a non-leap year or supply a weather file with 366 days.
-- **BDEW profile type `GMF` fails.** `data/bdew/hourly_coefficients.csv` holds
-  three hourly factors written with a decimal comma (`5,18`: Monday to
-  Wednesday, 22.5 °C class, hour 5). As soon as a calculation selects one of
-  them, which happens with every bundled weather file, `bdew_calculate` raises
-  `ValueError: could not convert string to float: '5,18'`.
 - **`peak_design_kW` without `design_temperature` is ignored.** Design-load
   scaling (modes B and C) needs both values. If `annual_heat_kWh` and only
   `peak_design_kW` are given, the profile is scaled by annual energy alone and

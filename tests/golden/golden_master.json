@@ -172,9 +172,32 @@
       }
     },
     "bdew_GMF03_2023": {
-      "status": "error",
-      "type": "ValueError",
-      "message": "could not convert string to float: '5,18'"
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GMF03_2023::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GMF03_2023::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      },
+      "note": "Re-recorded for 0.4.1: three hourly factors with a decimal comma in hourly_coefficients.csv were corrected; the case raised ValueError before."
     },
     "bdew_GBD03_2023_dhs_call": {
       "status": "ok",
