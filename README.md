@@ -80,8 +80,8 @@ TRY files can be loaded via a file browser.
 ## Demo scripts
 
 ```bash
-python examples/bdew_demo.py    path/to/TRY.dat --output ./output
-python examples/vdi4655_demo.py path/to/TRY.dat --output ./output
+python examples/bdew_demo.py    --try-file path/to/TRY.dat --output ./output
+python examples/vdi4655_demo.py --try-file path/to/TRY.dat --output ./output
 ```
 
 The package ships with six TRY files for **Bautzen** (51.1676°N, 14.4222°E,
@@ -95,6 +95,45 @@ from pyslpheat import TRY_BAUTZEN_2045, TRY_BAUTZEN_2045_WINTER, TRY_BAUTZEN_204
 
 Additional TRY files are available from
 [DWD / BBSR](https://www.bbsr.bund.de/BBSR/DE/forschung/programme/zb/Auftragsforschung/5EnergieKlimaBauen/2013/testreferenzjahre/01-start.html).
+
+## Performance
+
+Weather files and the bundled coefficient tables are cached per process, so
+calling `calculate()` once per building is cheap: after the first call about
+1.6 ms per building for BDEW and 2.4 ms for VDI 4655. Memory use, invalidation
+and thread safety are described in
+[Performance and caching](docs/DOCUMENTATION.md#performance-and-caching).
+
+## Known issues
+
+The test suite pins the current behaviour of the first three items
+(`tests/golden_cases.py`), so fixing one of them shows up there as an intended
+change.
+
+- **Leap years need a weather file with 8784 hours.** DWD TRY files, including
+  the bundled ones, cover 8760 hours. With a leap year such as `year=2024`,
+  `bdew_calculate` and `vdi4655_calculate` both raise
+  `ValueError: operands could not be broadcast together with shapes (365,) (366,)`.
+  Use a non-leap year or supply a weather file with 366 days.
+- **BDEW profile type `GMF` fails.** `data/bdew/hourly_coefficients.csv` holds
+  three hourly factors written with a decimal comma (`5,18`: Monday to
+  Wednesday, 22.5 °C class, hour 5). As soon as a calculation selects one of
+  them, which happens with every bundled weather file, `bdew_calculate` raises
+  `ValueError: could not convert string to float: '5,18'`.
+- **`peak_design_kW` without `design_temperature` is ignored.** Design-load
+  scaling (modes B and C) needs both values. If `annual_heat_kWh` and only
+  `peak_design_kW` are given, the profile is scaled by annual energy alone and
+  no warning is issued.
+- **The two modules return different time steps.** BDEW profiles are hourly
+  (8760 values), VDI 4655 profiles quarter-hourly (35 040 values). They cannot
+  be stacked into one array without resampling.
+
+Effects on [DistrictHeatingSim](https://github.com/JonasPfeiffer123/DistrictHeatingSim):
+
+- Its optional `P_max` column is passed as `peak_design_kW` without
+  `design_temperature` and therefore has no effect at present.
+- Its `Datensatz` mode fails for a portfolio that mixes `EFH`/`MFH` buildings
+  (VDI 4655) with BDEW building types, because of the different time steps.
 
 ## Documentation
 

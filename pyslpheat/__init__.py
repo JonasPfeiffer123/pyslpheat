@@ -20,19 +20,24 @@ Both ``calculate()`` functions return a ``pandas.DataFrame`` with a
 ``DatetimeIndex`` and columns ``Q_heat_kWh``, ``Q_dhw_kWh``,
 ``Q_total_kWh``, ``temperature_C``.
 VDI 4655 additionally includes ``Q_electricity_kWh``.
+
+Weather files and the bundled coefficient tables are cached per process, so
+repeated calls (one per building) are cheap. ``clear_caches()`` drops them.
 """
 
 import os as _os
 
 from .bdew    import calculate as bdew_calculate      # noqa: F401
 from .vdi4655 import calculate as vdi4655_calculate   # noqa: F401
+from ._cache  import clear_caches                     # noqa: F401
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__  = "Jonas Pfeiffer"
 
 __all__ = [
     "bdew_calculate",
     "vdi4655_calculate",
+    "clear_caches",
     "TRY_BAUTZEN_2015",
     "TRY_BAUTZEN_2015_WINTER",
     "TRY_BAUTZEN_2015_SUMMER",

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name        = "pyslpheat"
-version     = "0.3.0"
+version     = "0.4.0"
 description = "BDEW and VDI 4655 heat demand load profiles for district heating simulations"
 readme      = "README.md"
 requires-python = ">=3.9"
@@ -42,7 +42,7 @@ Documentation = "https://github.com/JonasPfeiffer123/pyslpheat/blob/main/docs/DO
 
 [project.optional-dependencies]
 gui = ["PyQt6>=6.5", "matplotlib>=3.7"]
-dev = ["matplotlib>=3.7"]
+dev = ["matplotlib>=3.7", "pytest>=7"]
 
 [project.scripts]
 pyslpheat-gui = "pyslpheat.frontend:main"
@@ -59,3 +59,8 @@ pyslpheat = [
     "data/try/*.dat",
     "images/*",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Test the working tree, not an installed copy of the package
+pythonpath = ["."]

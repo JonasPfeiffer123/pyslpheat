@@ -25,24 +25,23 @@ import os as _os
 
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Dict, Tuple
+
+try:
+    from ._cache import FileCache, cached_data, read_only
+except ImportError:  # executed as a script: python pyslpheat/vdi4655.py
+    from _cache import FileCache, cached_data, read_only
 
 _log = logging.getLogger(__name__)
 
 
 # ── Local helper implementations (no external package dependency) ─────────────
 
-def import_TRY(filename: str):
+def _read_TRY(filename: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Read TRY weather file and return meteorological arrays.
+    Parse a TRY weather file into read-only meteorological arrays.
 
-    Searches for the '***' separator line robustly (compatible with all DWD TRY
-    formats). Columns follow the standard TRY definition:
-      RW HW MM DD HH t p WR WG N x RF B D A E IL
-      index: 0  1  2  3  4 5 6  7  8 9 ...    12 13
-
-    :return: (temperature [°C], windspeed [m/s], direct_rad [W/m²],
-              global_rad [W/m²], cloud_cover [oktas 0-8])
+    :return: (temperature, windspeed, direct_rad, global_rad, cloud_cover)
     """
     temps, winds, dirs, diffs, clouds = [], [], [], [], []
     past_header = False
@@ -69,7 +68,31 @@ def import_TRY(filename: str):
     diffuse_radiation = np.array(diffs, dtype=float)
     global_radiation = direct_radiation + diffuse_radiation
     cloud_cover      = np.array(clouds, dtype=float)
-    return temperature, windspeed, direct_radiation, global_radiation, cloud_cover
+    return tuple(read_only(a) for a in (
+        temperature, windspeed, direct_radiation, global_radiation, cloud_cover))
+
+
+_TRY_CACHE = FileCache(_read_TRY)
+
+
+def import_TRY(filename: str):
+    """
+    Read TRY weather file and return meteorological arrays.
+
+    Searches for the '***' separator line robustly (compatible with all DWD TRY
+    formats). Columns follow the standard TRY definition:
+      RW HW MM DD HH t p WR WG N x RF B D A E IL
+      index: 0  1  2  3  4 5 6  7  8 9 ...    12 13
+
+    :return: (temperature [°C], windspeed [m/s], direct_rad [W/m²],
+              global_rad [W/m²], cloud_cover [oktas 0-8])
+
+    .. note::
+        The parsed file is cached per process and read again when its
+        modification time or size changes. The returned arrays are copies
+        and may be modified freely.
+    """
+    return tuple(a.copy() for a in _TRY_CACHE.get(filename))
 
 
 _VDI4655_DATA_DIR = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data", "vdi4655")
@@ -208,6 +231,31 @@ def quarter_hourly_data(data: np.ndarray) -> np.ndarray:
     num_quarter_hours_per_day = 24 * 4  # 96 intervals per day
     return np.repeat(data, num_quarter_hours_per_day)
 
+_INTERVALS_PER_DAY = 24 * 4
+
+# Column names are fixed by the VDI 4655 CSV schema (German headers in source data)
+_PROFILE_COLUMNS = ('Strombedarf normiert', 'Heizwärme normiert', 'Warmwasser normiert')
+_PROFILE_TIMES = [f"{h:02d}:{m:02d}" for h in range(24) for m in (0, 15, 30, 45)]
+
+@cached_data
+def _load_profile(profile_day: str) -> np.ndarray:
+    """
+    Normalised quarter-hourly profiles of one type day, read once per process.
+
+    :param profile_day: Building type and type day, e.g. ``'EFHWWH'``
+    :type profile_day: str
+    :return: Read-only array of shape (3, 96): electricity, space heating and
+        DHW for the intervals starting at 00:00, 00:15, … 23:45
+    :rtype: np.ndarray
+    :raises FileNotFoundError: If there is no profile file for this type day
+    """
+    file_path = get_resource_path(f'data\\VDI 4655 profiles\\VDI 4655 load profiles\\{profile_day}.csv')
+    profile_data = pd.read_csv(file_path, sep=';')
+    by_time = profile_data[profile_data['Zeit'].notna()].set_index('Zeit').reindex(_PROFILE_TIMES)
+    values = by_time[list(_PROFILE_COLUMNS)].to_numpy(dtype=float).T
+    # Handle any missing values (fill with average)
+    return read_only(np.nan_to_num(values, nan=1.0))
+
 def standardized_quarter_hourly_profile(year: int, 
                                       building_type: str, 
                                       days_of_year: np.ndarray, 
@@ -234,74 +282,61 @@ def standardized_quarter_hourly_profile(year: int,
     """
     # Generate quarter-hourly time intervals
     quarter_hourly_intervals = calculate_quarter_hourly_intervals(year)
-    
-    # Create daily date array for mapping
-    daily_dates = np.array([np.datetime64(dt, 'D') for dt in quarter_hourly_intervals])
-    
-    # Map quarter-hourly intervals to corresponding days in year
-    indices = np.searchsorted(days_of_year, daily_dates)
-    quarterly_type_days = type_days[indices % len(type_days)]
-    
-    # Load VDI 4655 profile data for all required day types
-    all_type_days = np.unique(quarterly_type_days)
-    all_data = {}
-    
-    for type_day in all_type_days:
-        profile_filename = f"{building_type}{type_day}.csv"
-        file_path = get_resource_path(f'data\\VDI 4655 profiles\\VDI 4655 load profiles\\{profile_filename}')
-        
+
+    # Map each day of the year to its type day; all 96 intervals of a day share it
+    year_days = quarter_hourly_intervals[::_INTERVALS_PER_DAY].astype('datetime64[D]')
+    indices = np.searchsorted(days_of_year, year_days)
+    daily_type_days = type_days[indices % len(type_days)]
+
+    # Load VDI 4655 profile data for all required day types (each file is read
+    # once per process)
+    all_type_days, day_index = np.unique(daily_type_days, return_inverse=True)
+    profiles = np.empty((len(all_type_days), len(_PROFILE_COLUMNS), _INTERVALS_PER_DAY))
+
+    for i, type_day in enumerate(all_type_days):
         try:
-            profile_data = pd.read_csv(file_path, sep=';')
-            all_data[f"{building_type}{type_day}"] = profile_data
+            profiles[i] = _load_profile(f"{building_type}{type_day}")
         except FileNotFoundError:
-            _log.warning("Profile file not found: %s", profile_filename)
-            # Create dummy profile data if file missing
-            times = [f"{h:02d}:{m:02d}" for h in range(24) for m in [0, 15, 30, 45]]
-            # Column names must match the VDI 4655 CSV schema (German headers in source data)
-            dummy_data = pd.DataFrame({
-                'Zeit': times,
-                'Strombedarf normiert': np.ones(96),  # normalised electricity
-                'Heizwärme normiert': np.ones(96),    # normalised space heating
-                'Warmwasser normiert': np.ones(96),   # normalised DHW
-            })
-            all_data[f"{building_type}{type_day}"] = dummy_data
-    
-    # Create profile day identifiers
-    profile_days = np.char.add(building_type, quarterly_type_days)
-    
-    # Extract time strings from intervals
-    times_str = np.datetime_as_string(quarter_hourly_intervals, unit='m')
-    times = np.array([t.split('T')[1] for t in times_str])
-    
-    # Create mapping dataframe
-    times_profile_df = pd.DataFrame({
-        'Datum': np.repeat(days_of_year, 24*4),
-        'Zeit': times,
-        'ProfileDay': profile_days
-    })
-    
-    # Combine all profile data
-    combined_df = pd.concat([
-        df.assign(ProfileDay=profile_day) 
-        for profile_day, df in all_data.items()
-    ])
-    
-    # Merge temporal mapping with profile data
-    merged_df = pd.merge(times_profile_df, combined_df, on=['Zeit', 'ProfileDay'], how='left')
-    
-    # Extract demand profiles
-    electricity_demand = merged_df['Strombedarf normiert'].values
-    heating_demand = merged_df['Heizwärme normiert'].values
-    hot_water_demand = merged_df['Warmwasser normiert'].values
-    
-    # Handle any missing values (fill with average)
-    electricity_demand = np.nan_to_num(electricity_demand, nan=1.0)
-    heating_demand = np.nan_to_num(heating_demand, nan=1.0)
-    hot_water_demand = np.nan_to_num(hot_water_demand, nan=1.0)
-    
+            _log.warning("Profile file not found: %s", f"{building_type}{type_day}.csv")
+            # Use a flat dummy profile if file missing
+            profiles[i] = 1.0
+
+    if len(days_of_year) * _INTERVALS_PER_DAY != len(quarter_hourly_intervals):
+        raise ValueError("All arrays must be of the same length")
+
+    # Select the profile of each day and string the days together
+    electricity_demand, heating_demand, hot_water_demand = (
+        profiles[day_index, column].reshape(-1) for column in range(len(_PROFILE_COLUMNS)))
+
     return quarter_hourly_intervals, electricity_demand, heating_demand, hot_water_demand
 
-def calculation_load_profile(TRY: str, 
+@cached_data
+def _daily_factors() -> Dict[str, Tuple[float, float, float]]:
+    """
+    VDI 4655 daily energy factors, read once per process.
+
+    :return: Profile day (e.g. ``'EFH9WWH'``) → (Fheiz,TT, Fel,TT, FTWW,TT);
+        shared, must not be modified
+    :rtype: Dict[str, Tuple[float, float, float]]
+    :raises FileNotFoundError: If the factor file is missing
+    """
+    factors_file = get_resource_path('data\\VDI 4655 profiles\\VDI 4655 data\\Faktoren.csv')
+
+    try:
+        factor_data = pd.read_csv(factors_file, sep=';')
+    except FileNotFoundError:
+        raise FileNotFoundError(f"VDI 4655 factor data not found: {factors_file}")
+
+    factor_data = factor_data[factor_data['Profiltag'].notna()]
+    factors: Dict[str, Tuple[float, float, float]] = {}
+    for tag, heating, electricity, hot_water in zip(
+            factor_data['Profiltag'], factor_data['Fheiz,TT'],
+            factor_data['Fel,TT'], factor_data['FTWW,TT']):
+        # If a profile day is listed more than once, the first row counts
+        factors.setdefault(tag, (heating, electricity, hot_water))
+    return factors
+
+def calculation_load_profile(TRY: str,
                            building_type: str, 
                            number_people_household: int, 
                            annual_electricity_kWh: float, 
@@ -340,13 +375,8 @@ def calculation_load_profile(TRY: str,
     .. note::
         Implements complete VDI 4655 workflow with day-type classification and energy balance normalization.
     """
-    # Load VDI 4655 scaling factors
-    factors_file = get_resource_path('data\\VDI 4655 profiles\\VDI 4655 data\\Faktoren.csv')
-    
-    try:
-        factor_data = pd.read_csv(factors_file, sep=';')
-    except FileNotFoundError:
-        raise FileNotFoundError(f"VDI 4655 factor data not found: {factors_file}")
+    # Load VDI 4655 scaling factors (file is read once per process)
+    factors = _daily_factors()
 
     # Generate temporal arrays
     days_of_year, months, days, weekdays = generate_year_months_days_weekdays(year)
@@ -371,29 +401,18 @@ def calculation_load_profile(TRY: str,
     type_day = np.char.add(np.char.add(season, day_type), cloud_classification)
     profile_day = np.char.add((building_type + climate_zone), type_day)
 
-    # Extract scaling factors for each day
-    f_heating_tt = np.zeros(len(profile_day))
-    f_el_tt = np.zeros(len(profile_day))
-    f_hotwater_tt = np.zeros(len(profile_day))
-
-    for i, tag in enumerate(profile_day):
-        try:
-            factor_row = factor_data[factor_data['Profiltag'] == tag]
-            if not factor_row.empty:
-                index = factor_row.index[0]
-                f_heating_tt[i] = factor_data.loc[index, 'Fheiz,TT']
-                f_el_tt[i] = factor_data.loc[index, 'Fel,TT']
-                f_hotwater_tt[i] = factor_data.loc[index, 'FTWW,TT']
-            else:
-                _log.warning("No factors found for profile day %s — using defaults", tag)
-                f_heating_tt[i] = 1.0
-                f_el_tt[i] = 0.0
-                f_hotwater_tt[i] = 0.0
-        except Exception as e:
-            _log.warning("Error processing profile day %s: %s", tag, e)
-            f_heating_tt[i] = 1.0
-            f_el_tt[i] = 0.0
-            f_hotwater_tt[i] = 0.0
+    # Extract scaling factors for each day: look up each distinct profile day
+    # once (a year has at most ten) and expand to all days
+    tags, day_index = np.unique(profile_day, return_inverse=True)
+    missing = [tag for tag in tags if tag not in factors]
+    if missing:
+        for tag in profile_day[np.isin(profile_day, missing)]:
+            _log.warning("No factors found for profile day %s — using defaults", tag)
+    tag_factors = np.array(
+        [factors.get(tag, (1.0, 0.0, 0.0)) for tag in tags], dtype=float).reshape(-1, 3)
+    f_heating_tt = tag_factors[day_index, 0]
+    f_el_tt = tag_factors[day_index, 1]
+    f_hotwater_tt = tag_factors[day_index, 2]
 
     # Calculate daily energy consumption using VDI 4655 formulas
     daily_electricity = annual_electricity_kWh * ((1/365) + (number_people_household * f_el_tt))

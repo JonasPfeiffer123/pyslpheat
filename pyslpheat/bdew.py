@@ -28,13 +28,44 @@ import pandas as pd
 import numpy as np
 import math
 import os
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 _log = logging.getLogger(__name__)
 from datetime import date as _date, timedelta as _timedelta
 
+try:
+    from ._cache import FileCache, cached_data, read_only
+except ImportError:  # executed as a script: python pyslpheat/bdew.py
+    from _cache import FileCache, cached_data, read_only
+
 # Data directory for BDEW CSV files
 _HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "bdew")
+
+
+def _read_TRY(filepath: str) -> np.ndarray:
+    """
+    Parse the hourly temperatures of a DWD TRY .dat file.
+
+    :param filepath: Path to TRY .dat file
+    :type filepath: str
+    :return: Read-only hourly temperature [°C]
+    :rtype: np.ndarray
+    """
+    temperatures: list = []
+    past_header = False
+    with open(filepath, 'r', encoding='latin-1') as fh:
+        for line in fh:
+            if not past_header:
+                if line.strip().startswith('***'):
+                    past_header = True
+                continue
+            parts = line.split()
+            if len(parts) >= 6:
+                temperatures.append(float(parts[5]))
+    return read_only(np.array(temperatures, dtype=float))
+
+
+_TRY_CACHE = FileCache(_read_TRY)
 
 
 def import_TRY(filepath: str) -> Tuple[np.ndarray, None, None, None, None]:
@@ -49,19 +80,13 @@ def import_TRY(filepath: str) -> Tuple[np.ndarray, None, None, None, None]:
     :type filepath: str
     :return: (hourly_temperature, None, None, None, None)
     :rtype: Tuple[np.ndarray, None, None, None, None]
+
+    .. note::
+        The parsed file is cached per process and read again when its
+        modification time or size changes. The returned array is a copy and
+        may be modified freely.
     """
-    temperatures: list = []
-    past_header = False
-    with open(filepath, 'r', encoding='latin-1') as fh:
-        for line in fh:
-            if not past_header:
-                if line.strip().startswith('***'):
-                    past_header = True
-                continue
-            parts = line.split()
-            if len(parts) >= 6:
-                temperatures.append(float(parts[5]))
-    return np.array(temperatures, dtype=float), None, None, None, None
+    return _TRY_CACHE.get(filepath).copy(), None, None, None, None
 
 def generate_year_months_days_weekdays(year: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -139,16 +164,15 @@ def calculate_allocation_temperature(daily_avg_temperature: np.ndarray) -> np.nd
         T_allo(D) = (T_D·8 + T_{D-1}·4 + T_{D-2}·2 + T_{D-3}·1) / 15
     """
     weights = np.array([8.0, 4.0, 2.0, 1.0]) / 15.0
-    n = len(daily_avg_temperature)
-    result = np.empty(n)
-    for i in range(n):
-        result[i] = (
-            weights[0] * daily_avg_temperature[i]
-            + weights[1] * daily_avg_temperature[max(i - 1, 0)]
-            + weights[2] * daily_avg_temperature[max(i - 2, 0)]
-            + weights[3] * daily_avg_temperature[max(i - 3, 0)]
-        )
-    return result
+    temperature = np.asarray(daily_avg_temperature)
+    day = np.arange(len(temperature))
+    # The first days of the year reuse day 0 for the missing previous days
+    return (
+        weights[0] * temperature
+        + weights[1] * temperature[np.maximum(day - 1, 0)]
+        + weights[2] * temperature[np.maximum(day - 2, 0)]
+        + weights[3] * temperature[np.maximum(day - 3, 0)]
+    )
 
 def compute_holidays(year: int) -> set:
     """
@@ -301,32 +325,141 @@ def get_weekday_factor(daily_weekdays: np.ndarray,
     if profile_row.empty:
         raise ValueError(f"Profile '{profile}' not found in BDEW coefficient data")
     
-    # Extract weekday factors for each day
+    # Extract weekday factors: one table access per distinct weekday, then
+    # expand to all days
+    row = profile_row.iloc[0]
     try:
+        weekdays, day_index = np.unique(daily_weekdays, return_inverse=True)
         weekday_factors = np.array([
-            profile_row.iloc[0][str(day)] for day in daily_weekdays
-        ]).astype(float)
+            row[str(day)] for day in weekdays
+        ])[day_index].astype(float)
     except KeyError as e:
         raise KeyError(f"Missing weekday column in BDEW data: {e}") from e
     except ValueError as e:
         raise ValueError(f"Invalid weekday factor value: {e}") from e
-    
+
     return weekday_factors
+
+@cached_data
+def _daily_coefficients() -> pd.DataFrame:
+    """
+    BDEW daily coefficient table, read once per process.
+
+    :return: Contents of ``daily_coefficients.csv``; shared, must not be modified
+    :rtype: pd.DataFrame
+    """
+    return pd.read_csv(os.path.join(_HERE, 'daily_coefficients.csv'), delimiter=';')
+
+@cached_data
+def _profile_parameters(profile: str) -> Tuple[Tuple[float, ...], np.ndarray]:
+    """
+    Coefficients and weekday factors of one profile, looked up once per process.
+
+    :param profile: Profile type and subtype, e.g. ``'GBD03'``
+    :type profile: str
+    :return: Tuple of ((A, B, C, D, mH, bH, mW, bW), weekday factors Monday..Sunday);
+        the factor array is read-only
+    :rtype: Tuple[Tuple[float, ...], np.ndarray]
+    :raises ValueError: If profile not found in data
+    """
+    daily_data = _daily_coefficients()
+    coefficients = get_coefficients(profile, "", daily_data)
+    weekday_factors = get_weekday_factor(np.arange(1, 8), profile, "", daily_data)
+    return coefficients, read_only(weekday_factors)
+
+@cached_data
+def _hourly_factor_tables() -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    """
+    BDEW hourly shape factors as one lookup table per profile type.
+
+    :return: Profile type → (weekdays, temperatures, hours, factors) with sorted key
+        arrays and ``factors[w, t, h]`` the hourly factor for ``weekdays[w]``,
+        ``temperatures[t]`` and ``hours[h]``; read-only
+    :rtype: Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]
+    """
+    hourly_data = pd.read_csv(os.path.join(_HERE, 'hourly_coefficients.csv'), delimiter=';')
+    tables = {}
+    for profile_type, rows in hourly_data.groupby('Typ', sort=False):
+        weekdays, w = np.unique(rows['Wochentag'].values, return_inverse=True)
+        temperatures, t = np.unique(rows['Temperatur'].values, return_inverse=True)
+        hours, h = np.unique(rows['Stunde'].values, return_inverse=True)
+        factors = rows['Stundenfaktor'].values
+        try:
+            factors = factors.astype(float)
+        except ValueError:
+            # Entries that are not numbers stay text and fail when they are used
+            factors = factors.astype(object)
+        table = np.full((len(weekdays), len(temperatures), len(hours)), np.nan,
+                        dtype=factors.dtype)
+        table[w, t, h] = factors
+        tables[profile_type] = tuple(
+            read_only(a) for a in (weekdays, temperatures, hours, table))
+    return tables
+
+def _positions(keys: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Locate *values* in the sorted array *keys*.
+
+    :return: Tuple of (position in keys, whether the value is present in keys)
+    :rtype: Tuple[np.ndarray, np.ndarray]
+    """
+    position = np.minimum(np.searchsorted(keys, values), len(keys) - 1)
+    return position, keys[position] == values
+
+def _hourly_factors(profile_type: str,
+                    daily_weekdays: np.ndarray,
+                    temperature_class: np.ndarray) -> np.ndarray:
+    """
+    Look up the hourly shape factor for each hour of the year.
+
+    :param profile_type: BDEW building type
+    :type profile_type: str
+    :param daily_weekdays: Weekday number of each day
+    :type daily_weekdays: np.ndarray
+    :param temperature_class: Temperature class [°C] of each hour (24 per day), as tabulated
+    :type temperature_class: np.ndarray
+    :return: Hourly factors; NaN where the table has no entry
+    :rtype: np.ndarray
+    :raises ValueError: If a selected table entry is not a number
+    """
+    table = _hourly_factor_tables().get(profile_type)
+    if table is None:
+        return np.full(len(temperature_class), np.nan)
+    weekdays, temperatures, hours, factors = table
+    num_days = len(daily_weekdays)
+    # Weekday and hour of day repeat regularly: locate them once per day / per hour of day
+    w, w_found = (np.repeat(a, 24) for a in _positions(weekdays, daily_weekdays))
+    h, h_found = (np.tile(a, num_days) for a in _positions(hours, np.arange(24)))
+    t, t_found = _positions(temperatures, temperature_class)
+    return np.where(w_found & t_found & h_found, factors[w, t, h], np.nan).astype(float)
 
 def _apply_peak_jitter(series: pd.Series, max_shift: int, rng: np.random.Generator) -> pd.Series:
     """
     Shift the hourly profile per day by ±max_shift hours (circular, within day).
     Daily sum is preserved.
     """
-    result = series.copy()
-    for day in series.index.normalize().unique():
-        mask = series.index.normalize() == day
-        vals = series[mask].values
-        if len(vals) < 24:
-            continue
-        shift = int(rng.integers(-max_shift, max_shift + 1))
-        result[mask] = np.roll(vals, shift)
-    return result
+    values = series.values
+    # Number the days in order of first appearance and count their values
+    day, days = pd.factorize(series.index.normalize())
+    count = np.bincount(day, minlength=len(days))
+
+    # One shift per complete day. Drawn one by one: a single array draw is not
+    # guaranteed to consume the random stream identically.
+    shift = np.array(
+        [int(rng.integers(-max_shift, max_shift + 1)) if n >= 24 else 0 for n in count],
+        dtype=np.intp)
+
+    # Rank of every value within its day, then roll all days at once:
+    # the value at rank r moves to rank (r + shift) mod n
+    order = np.argsort(day, kind='stable')
+    day = day[order]
+    first = (np.cumsum(count) - count)[day]
+    rank = np.arange(len(values)) - first
+    target = order[first + (rank + shift[day]) % count[day]]
+
+    result = values.copy()
+    result[target] = values[order]
+    return pd.Series(result, index=series.index, name=series.name)
 
 
 def _apply_lognormal_noise(series: pd.Series, sigma: float, rng: np.random.Generator) -> pd.Series:
@@ -371,10 +504,16 @@ def _apply_dhw_draw_events(
     original_dhw = dhw.sum()
 
     new_dhw = np.zeros(len(dhw))
-    days = pd.Series(dhw.index.date).unique()
-    hour_index = {ts: i for i, ts in enumerate(dhw.index)}
 
-    for day in days:
+    # rows[d][h]: position of the timestamp "day d, h o'clock" in the series,
+    # -1 if the series has none. Days are numbered in order of first appearance.
+    index = dhw.index
+    day, days = pd.factorize(index.normalize())
+    on_the_hour = np.flatnonzero(index == index.floor('h'))
+    rows = np.full((len(days), 24), -1)
+    rows[day[on_the_hour], index.hour.values[on_the_hour]] = on_the_hour
+
+    for day_rows in rows.tolist():
         n_draws = rng.poisson(draws_per_day)
         for _ in range(n_draws):
             if rng.random() < 0.60:
@@ -386,11 +525,9 @@ def _apply_dhw_draw_events(
             amp = min(rng.lognormal(0.0, 0.4), 2.0)     # same amplitude across block
 
             for dh in range(duration):
-                h  = (start_h + dh) % 24
-                ts = pd.Timestamp(year=day.year, month=day.month,
-                                  day=day.day, hour=h)
-                if ts in hour_index:
-                    new_dhw[hour_index[ts]] += amp
+                row = day_rows[(start_h + dh) % 24]
+                if row >= 0:
+                    new_dhw[row] += amp
 
     total = new_dhw.sum()
     if total > 0:
@@ -524,17 +661,12 @@ def calculate(annual_heat_kWh: Optional[float],
     daily_alloc_temp = calculate_allocation_temperature(daily_avg_temperature)
 
     # Override weekday to 7 (Sunday) for statutory holidays (BDEW guideline §6.1.1)
-    holiday_dates = compute_holidays(year)
-    for i, d in enumerate(days_of_year):
-        if _date.fromisoformat(str(d)) in holiday_dates:
-            daily_weekdays[i] = 7
+    holiday_dates = np.array(sorted(compute_holidays(year)), dtype='datetime64[D]')
+    daily_weekdays[np.isin(days_of_year, holiday_dates)] = 7
 
-    # Load BDEW coefficient data
-    daily_data = pd.read_csv(os.path.join(_HERE, 'daily_coefficients.csv'), delimiter=';')
-    
-    # Extract building-specific coefficients
-    h_A, h_B, h_C, h_D, mH, bH, mW, bW = get_coefficients(profile_type, subtype, daily_data)
-    
+    # Building-specific coefficients and weekday factors (table is read once per process)
+    (h_A, h_B, h_C, h_D, mH, bH, mW, bW), weekday_factors = _profile_parameters(profile_type + subtype)
+
     # Linear temperature corrections based on allocation temperature (BDEW guideline p. 41-42)
     lin_H = (np.nan_to_num(mH * daily_alloc_temp + bH)
              if mH != 0 or bH != 0 else np.zeros(len(daily_alloc_temp)))
@@ -554,8 +686,8 @@ def calculate(annual_heat_kWh: Optional[float],
 
     h_T_total = h_T_heating + h_T_dhw
 
-    # Apply weekday factors
-    F_D = get_weekday_factor(daily_weekdays, profile_type, subtype, daily_data)
+    # Apply weekday factors (daily_weekdays: 1=Monday .. 7=Sunday)
+    F_D = weekday_factors[daily_weekdays - 1]
 
     # ── Normalization: KW and optional heating slope factor α ────────────────
     #
@@ -692,44 +824,12 @@ def calculate(annual_heat_kWh: Optional[float],
     )
 
     # Expand daily data to hourly resolution
-    daily_hours = np.tile(np.arange(24), len(days_of_year))
-    hourly_weekdays = np.repeat(daily_weekdays, 24)
     hourly_daily_heat_demand_heating = np.repeat(daily_heat_demand_heating, 24)
     hourly_daily_heat_demand_dhw     = np.repeat(daily_heat_demand_dhw, 24)
 
-    # Load BDEW hourly coefficient data
-    hourly_data = pd.read_csv(os.path.join(_HERE, 'hourly_coefficients.csv'), delimiter=';')
-    filtered_hourly_data = hourly_data[hourly_data["Typ"] == profile_type]
-
-    # Create conditions dataframe for coefficient lookup
-    # Note: column names ('Wochentag', 'Stunde', 'Temperatur') are fixed by the CSV schema
-    hourly_conditions = pd.DataFrame({
-        'Wochentag': hourly_weekdays,
-        'TemperaturLower': lower_limit,
-        'TemperaturUpper': upper_limit,
-        'Stunde': daily_hours
-    })
-
-    # Merge hourly conditions with coefficient data for interpolation bounds
-    merged_data_T1 = pd.merge(
-        hourly_conditions,
-        filtered_hourly_data,
-        how='left',
-        left_on=['Wochentag', 'TemperaturLower', 'Stunde'],
-        right_on=['Wochentag', 'Temperatur', 'Stunde']
-    )
-
-    merged_data_T2 = pd.merge(
-        hourly_conditions,
-        filtered_hourly_data,
-        how='left',
-        left_on=['Wochentag', 'TemperaturUpper', 'Stunde'],
-        right_on=['Wochentag', 'Temperatur', 'Stunde']
-    )
-
-    # Extract hourly factors for interpolation
-    hour_factor_T1 = merged_data_T1["Stundenfaktor"].values.astype(float)
-    hour_factor_T2 = merged_data_T2["Stundenfaktor"].values.astype(float)
+    # Hourly factors at the interpolation bounds (tables are read once per process)
+    hour_factor_T1 = _hourly_factors(profile_type, daily_weekdays, lower_limit)
+    hour_factor_T2 = _hourly_factors(profile_type, daily_weekdays, upper_limit)
 
     # Perform linear interpolation between temperature bounds
     hour_factor_interpolation = hour_factor_T2 + (hour_factor_T1 - hour_factor_T2) * (
@@ -774,8 +874,10 @@ def calculate(annual_heat_kWh: Optional[float],
             _log.warning("Invalid DHW share %s — using calculated value %.3f", dhw_share, initial_dhw_share)
 
     # Build DataFrame with DatetimeIndex
+    # pandas stores datetime64[h] as datetime64[s]; converting with numpy first
+    # gives the same index and is about ten times faster
     hourly_intervals = calculate_hourly_intervals(year)
-    idx = pd.DatetimeIndex(hourly_intervals)
+    idx = pd.DatetimeIndex(hourly_intervals.astype('datetime64[s]'))
 
     sh  = pd.Series(hourly_heat_demand_heating_normed.astype(float),   index=idx)
     dhw = pd.Series(hourly_heat_demand_dhw_normed.astype(float), index=idx)
