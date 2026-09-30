@@ -231,6 +231,31 @@ def quarter_hourly_data(data: np.ndarray) -> np.ndarray:
     num_quarter_hours_per_day = 24 * 4  # 96 intervals per day
     return np.repeat(data, num_quarter_hours_per_day)
 
+_INTERVALS_PER_DAY = 24 * 4
+
+# Column names are fixed by the VDI 4655 CSV schema (German headers in source data)
+_PROFILE_COLUMNS = ('Strombedarf normiert', 'Heizwärme normiert', 'Warmwasser normiert')
+_PROFILE_TIMES = [f"{h:02d}:{m:02d}" for h in range(24) for m in (0, 15, 30, 45)]
+
+@cached_data
+def _load_profile(profile_day: str) -> np.ndarray:
+    """
+    Normalised quarter-hourly profiles of one type day, read once per process.
+
+    :param profile_day: Building type and type day, e.g. ``'EFHWWH'``
+    :type profile_day: str
+    :return: Read-only array of shape (3, 96): electricity, space heating and
+        DHW for the intervals starting at 00:00, 00:15, … 23:45
+    :rtype: np.ndarray
+    :raises FileNotFoundError: If there is no profile file for this type day
+    """
+    file_path = get_resource_path(f'data\\VDI 4655 profiles\\VDI 4655 load profiles\\{profile_day}.csv')
+    profile_data = pd.read_csv(file_path, sep=';')
+    by_time = profile_data[profile_data['Zeit'].notna()].set_index('Zeit').reindex(_PROFILE_TIMES)
+    values = by_time[list(_PROFILE_COLUMNS)].to_numpy(dtype=float).T
+    # Handle any missing values (fill with average)
+    return read_only(np.nan_to_num(values, nan=1.0))
+
 def standardized_quarter_hourly_profile(year: int, 
                                       building_type: str, 
                                       days_of_year: np.ndarray, 
@@ -257,71 +282,32 @@ def standardized_quarter_hourly_profile(year: int,
     """
     # Generate quarter-hourly time intervals
     quarter_hourly_intervals = calculate_quarter_hourly_intervals(year)
-    
-    # Create daily date array for mapping
-    daily_dates = np.array([np.datetime64(dt, 'D') for dt in quarter_hourly_intervals])
-    
-    # Map quarter-hourly intervals to corresponding days in year
-    indices = np.searchsorted(days_of_year, daily_dates)
-    quarterly_type_days = type_days[indices % len(type_days)]
-    
-    # Load VDI 4655 profile data for all required day types
-    all_type_days = np.unique(quarterly_type_days)
-    all_data = {}
-    
-    for type_day in all_type_days:
-        profile_filename = f"{building_type}{type_day}.csv"
-        file_path = get_resource_path(f'data\\VDI 4655 profiles\\VDI 4655 load profiles\\{profile_filename}')
-        
+
+    # Map each day of the year to its type day; all 96 intervals of a day share it
+    year_days = quarter_hourly_intervals[::_INTERVALS_PER_DAY].astype('datetime64[D]')
+    indices = np.searchsorted(days_of_year, year_days)
+    daily_type_days = type_days[indices % len(type_days)]
+
+    # Load VDI 4655 profile data for all required day types (each file is read
+    # once per process)
+    all_type_days, day_index = np.unique(daily_type_days, return_inverse=True)
+    profiles = np.empty((len(all_type_days), len(_PROFILE_COLUMNS), _INTERVALS_PER_DAY))
+
+    for i, type_day in enumerate(all_type_days):
         try:
-            profile_data = pd.read_csv(file_path, sep=';')
-            all_data[f"{building_type}{type_day}"] = profile_data
+            profiles[i] = _load_profile(f"{building_type}{type_day}")
         except FileNotFoundError:
-            _log.warning("Profile file not found: %s", profile_filename)
-            # Create dummy profile data if file missing
-            times = [f"{h:02d}:{m:02d}" for h in range(24) for m in [0, 15, 30, 45]]
-            # Column names must match the VDI 4655 CSV schema (German headers in source data)
-            dummy_data = pd.DataFrame({
-                'Zeit': times,
-                'Strombedarf normiert': np.ones(96),  # normalised electricity
-                'Heizwärme normiert': np.ones(96),    # normalised space heating
-                'Warmwasser normiert': np.ones(96),   # normalised DHW
-            })
-            all_data[f"{building_type}{type_day}"] = dummy_data
-    
-    # Create profile day identifiers
-    profile_days = np.char.add(building_type, quarterly_type_days)
-    
-    # Extract time strings from intervals
-    times_str = np.datetime_as_string(quarter_hourly_intervals, unit='m')
-    times = np.array([t.split('T')[1] for t in times_str])
-    
-    # Create mapping dataframe
-    times_profile_df = pd.DataFrame({
-        'Datum': np.repeat(days_of_year, 24*4),
-        'Zeit': times,
-        'ProfileDay': profile_days
-    })
-    
-    # Combine all profile data
-    combined_df = pd.concat([
-        df.assign(ProfileDay=profile_day) 
-        for profile_day, df in all_data.items()
-    ])
-    
-    # Merge temporal mapping with profile data
-    merged_df = pd.merge(times_profile_df, combined_df, on=['Zeit', 'ProfileDay'], how='left')
-    
-    # Extract demand profiles
-    electricity_demand = merged_df['Strombedarf normiert'].values
-    heating_demand = merged_df['Heizwärme normiert'].values
-    hot_water_demand = merged_df['Warmwasser normiert'].values
-    
-    # Handle any missing values (fill with average)
-    electricity_demand = np.nan_to_num(electricity_demand, nan=1.0)
-    heating_demand = np.nan_to_num(heating_demand, nan=1.0)
-    hot_water_demand = np.nan_to_num(hot_water_demand, nan=1.0)
-    
+            _log.warning("Profile file not found: %s", f"{building_type}{type_day}.csv")
+            # Use a flat dummy profile if file missing
+            profiles[i] = 1.0
+
+    if len(days_of_year) * _INTERVALS_PER_DAY != len(quarter_hourly_intervals):
+        raise ValueError("All arrays must be of the same length")
+
+    # Select the profile of each day and string the days together
+    electricity_demand, heating_demand, hot_water_demand = (
+        profiles[day_index, column].reshape(-1) for column in range(len(_PROFILE_COLUMNS)))
+
     return quarter_hourly_intervals, electricity_demand, heating_demand, hot_water_demand
 
 @cached_data

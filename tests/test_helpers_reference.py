@@ -156,3 +156,14 @@ def test_dhw_draw_events(name, draws_per_day):
     expected = ref.bdew_apply_dhw_draw_events(series, draws_per_day, 7)
     assert actual.index.equals(expected.index)
     _same(actual.values, expected.values)
+
+
+def test_standardized_quarter_hourly_profile_inconsistent_days():
+    # Day array of a non-leap year combined with a leap year
+    days_of_year = vdi4655.generate_year_months_days_weekdays(2023)[0]
+    type_days = np.array(TYPE_DAYS)[np.arange(len(days_of_year)) % len(TYPE_DAYS)]
+    with pytest.raises(ValueError) as expected:
+        ref.vdi_standardized_quarter_hourly_profile(2024, "EFH", days_of_year, type_days)
+    with pytest.raises(ValueError) as info:
+        vdi4655.standardized_quarter_hourly_profile(2024, "EFH", days_of_year, type_days)
+    assert str(info.value) == str(expected.value)
