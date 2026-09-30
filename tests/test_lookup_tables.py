@@ -3,13 +3,15 @@ The lookup tables built from the bundled CSV files must answer exactly like
 the pandas merges and row filters they replace.
 """
 
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from pyslpheat import bdew
+import pyslpheat
+from pyslpheat import bdew, vdi4655
 
 HOURLY_CSV = os.path.join(bdew._HERE, "hourly_coefficients.csv")
 PROFILE_TYPES = ["GBA", "GBD", "GBH", "GGA", "GGB", "GHA", "GHD", "GKO", "GMF", "GMK",
@@ -95,3 +97,28 @@ def test_profile_parameters_match_daily_table():
         row = daily_data[daily_data["Standardlastprofil"] == profile].iloc[0]
         assert weekday_factors.tolist() == [float(row[str(day)]) for day in range(1, 8)]
         assert not weekday_factors.flags.writeable
+
+
+# ── VDI 4655 ─────────────────────────────────────────────────────────────────
+
+def test_daily_factors_match_factor_table():
+    factor_data = pd.read_csv(os.path.join(vdi4655._VDI4655_DATA_DIR, "Faktoren.csv"), sep=";")
+    listed = factor_data[factor_data["Profiltag"].notna()]
+    assert listed["Profiltag"].is_unique
+    factors = vdi4655._daily_factors()
+    assert set(factors) == set(listed["Profiltag"])
+    for tag in listed["Profiltag"]:
+        # Row selection as implemented in v0.3.0
+        index = factor_data[factor_data["Profiltag"] == tag].index[0]
+        expected = tuple(factor_data.loc[index, c] for c in ("Fheiz,TT", "Fel,TT", "FTWW,TT"))
+        assert factors[tag] == expected
+
+
+def test_unknown_climate_zone_warns_once_per_day(caplog):
+    holidays = np.array([], dtype="datetime64[D]")
+    with caplog.at_level(logging.WARNING, logger="pyslpheat.vdi4655"):
+        vdi4655.calculate(15_000.0, 3_000.0, 3_500.0, "EFH", 2, 2023, "99",
+                          pyslpheat.TRY_BAUTZEN_2015, holidays)
+    messages = [r.getMessage() for r in caplog.records if "No factors found" in r.getMessage()]
+    assert len(messages) == 365
+    assert messages[0].startswith("No factors found for profile day EFH99W")
