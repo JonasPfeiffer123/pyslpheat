@@ -407,31 +407,30 @@ def _positions(keys: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, np.nda
     return position, keys[position] == values
 
 def _hourly_factors(profile_type: str,
-                    hourly_weekdays: np.ndarray,
-                    temperature_class: np.ndarray,
-                    daily_hours: np.ndarray) -> np.ndarray:
+                    daily_weekdays: np.ndarray,
+                    temperature_class: np.ndarray) -> np.ndarray:
     """
     Look up the hourly shape factor for each hour of the year.
 
     :param profile_type: BDEW building type
     :type profile_type: str
-    :param hourly_weekdays: Weekday number of each hour
-    :type hourly_weekdays: np.ndarray
-    :param temperature_class: Temperature class [°C] of each hour, as tabulated
+    :param daily_weekdays: Weekday number of each day
+    :type daily_weekdays: np.ndarray
+    :param temperature_class: Temperature class [°C] of each hour (24 per day), as tabulated
     :type temperature_class: np.ndarray
-    :param daily_hours: Hour of day (0-23) of each hour
-    :type daily_hours: np.ndarray
     :return: Hourly factors; NaN where the table has no entry
     :rtype: np.ndarray
     :raises ValueError: If a selected table entry is not a number
     """
     table = _hourly_factor_tables().get(profile_type)
     if table is None:
-        return np.full(len(hourly_weekdays), np.nan)
+        return np.full(len(temperature_class), np.nan)
     weekdays, temperatures, hours, factors = table
-    w, w_found = _positions(weekdays, hourly_weekdays)
+    num_days = len(daily_weekdays)
+    # Weekday and hour of day repeat regularly: locate them once per day / per hour of day
+    w, w_found = (np.repeat(a, 24) for a in _positions(weekdays, daily_weekdays))
+    h, h_found = (np.tile(a, num_days) for a in _positions(hours, np.arange(24)))
     t, t_found = _positions(temperatures, temperature_class)
-    h, h_found = _positions(hours, daily_hours)
     return np.where(w_found & t_found & h_found, factors[w, t, h], np.nan).astype(float)
 
 def _apply_peak_jitter(series: pd.Series, max_shift: int, rng: np.random.Generator) -> pd.Series:
@@ -808,14 +807,12 @@ def calculate(annual_heat_kWh: Optional[float],
     )
 
     # Expand daily data to hourly resolution
-    daily_hours = np.tile(np.arange(24), len(days_of_year))
-    hourly_weekdays = np.repeat(daily_weekdays, 24)
     hourly_daily_heat_demand_heating = np.repeat(daily_heat_demand_heating, 24)
     hourly_daily_heat_demand_dhw     = np.repeat(daily_heat_demand_dhw, 24)
 
     # Hourly factors at the interpolation bounds (tables are read once per process)
-    hour_factor_T1 = _hourly_factors(profile_type, hourly_weekdays, lower_limit, daily_hours)
-    hour_factor_T2 = _hourly_factors(profile_type, hourly_weekdays, upper_limit, daily_hours)
+    hour_factor_T1 = _hourly_factors(profile_type, daily_weekdays, lower_limit)
+    hour_factor_T2 = _hourly_factors(profile_type, daily_weekdays, upper_limit)
 
     # Perform linear interpolation between temperature bounds
     hour_factor_interpolation = hour_factor_T2 + (hour_factor_T1 - hour_factor_T2) * (
@@ -860,8 +857,10 @@ def calculate(annual_heat_kWh: Optional[float],
             _log.warning("Invalid DHW share %s — using calculated value %.3f", dhw_share, initial_dhw_share)
 
     # Build DataFrame with DatetimeIndex
+    # pandas stores datetime64[h] as datetime64[s]; converting with numpy first
+    # gives the same index and is about ten times faster
     hourly_intervals = calculate_hourly_intervals(year)
-    idx = pd.DatetimeIndex(hourly_intervals)
+    idx = pd.DatetimeIndex(hourly_intervals.astype('datetime64[s]'))
 
     sh  = pd.Series(hourly_heat_demand_heating_normed.astype(float),   index=idx)
     dhw = pd.Series(hourly_heat_demand_dhw_normed.astype(float), index=idx)
