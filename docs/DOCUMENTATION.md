@@ -82,7 +82,7 @@ That's it for a deterministic profile at BDEW standard settings.
 
 ### Return value
 
-A `pd.DataFrame` with an hourly `DatetimeIndex` (8 760 rows for non-leap years):
+A `pd.DataFrame` with an hourly `DatetimeIndex` (8 760 rows, 8 784 in leap years):
 
 | Column | Unit | Description |
 |---|---|---|
@@ -386,7 +386,7 @@ df = vdi4655_calculate(
 
 ### Return value
 
-A `pd.DataFrame` with a **15-minute** `DatetimeIndex` (35 040 rows):
+A `pd.DataFrame` with a **15-minute** `DatetimeIndex` (35 040 rows, 35 136 in leap years):
 
 | Column | Unit | Description |
 |---|---|---|
@@ -448,6 +448,19 @@ Both modules require a **DWD Test Reference Year** (TRY) `.dat` file, providing
 - **Format:** fixed-width text, header block ends with a line starting `***`, then one row per hour
 - Column index 5 = air temperature `t [°C]`
 - Column index 9 = cloud cover `N [oktas]` (VDI 4655 only)
+
+### Leap years
+
+With a leap year as `year` the result covers all 366 days, including
+29 February: 8 784 hourly values for BDEW, 35 136 quarter-hourly values for
+VDI 4655. A TRY file with 8 760 hours is extended by repeating the weather of
+28 February for 29 February; a file that already has 8 784 hours is used as it
+is. Weekdays and holidays follow the real calendar of the year. Any other
+number of hours raises a `ValueError` that states it.
+
+Annual energies are met exactly in leap years as well. In VDI 4655 the share
+of one day in the daily energy formula (1/365 in the standard) is 1/366 in a
+leap year.
 
 ### Bundled station – Bautzen
 

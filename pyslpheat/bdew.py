@@ -35,8 +35,10 @@ from datetime import date as _date, timedelta as _timedelta
 
 try:
     from ._cache import FileCache, cached_data, read_only
+    from ._weather import fit_to_year
 except ImportError:  # executed as a script: python pyslpheat/bdew.py
     from _cache import FileCache, cached_data, read_only
+    from _weather import fit_to_year
 
 # Data directory for BDEW CSV files
 _HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "bdew")
@@ -580,7 +582,8 @@ def calculate(annual_heat_kWh: Optional[float],
     :type profile_type: str
     :param subtype: Building subtype
     :type subtype: str
-    :param TRY_file_path: Path to Test Reference Year weather data
+    :param TRY_file_path: Path to Test Reference Year weather data with 8760 hourly
+        values; for a leap year 8784, or 8760 and 29 February repeats 28 February
     :type TRY_file_path: str
     :param year: Calculation year
     :type year: int
@@ -628,7 +631,8 @@ def calculate(annual_heat_kWh: Optional[float],
         ``Q_heat_kWh``, ``Q_dhw_kWh``, ``Q_total_kWh``, ``temperature_C``.
     :rtype: pd.DataFrame
     :raises FileNotFoundError: If TRY or BDEW data files not found
-    :raises ValueError: If profile not found or invalid parameters
+    :raises ValueError: If profile not found, invalid parameters, or the weather
+        data does not fit the year
     """
     # Input validation
     have_design = peak_design_kW is not None and design_temperature is not None
@@ -646,6 +650,8 @@ def calculate(annual_heat_kWh: Optional[float],
 
     # Import and process meteorological data
     hourly_temperature, _, _, _, _ = import_TRY(TRY_file_path)
+    # Leap year with 365 days of weather data: 29 February repeats 28 February
+    (hourly_temperature,) = fit_to_year(year, hourly_temperature)
     daily_avg_temperature = np.round(calculate_daily_averages(hourly_temperature), 1)
 
     # Allocation temperature (BDEW guideline p. 43-44):
