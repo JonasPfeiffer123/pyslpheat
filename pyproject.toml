@@ -62,3 +62,5 @@ pyslpheat = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Test the working tree, not an installed copy of the package
+pythonpath = ["."]
