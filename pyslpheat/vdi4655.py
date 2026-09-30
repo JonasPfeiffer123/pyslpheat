@@ -25,12 +25,12 @@ import os as _os
 
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Dict, Tuple
 
 try:
-    from ._cache import FileCache, read_only
+    from ._cache import FileCache, cached_data, read_only
 except ImportError:  # executed as a script: python pyslpheat/vdi4655.py
-    from _cache import FileCache, read_only
+    from _cache import FileCache, cached_data, read_only
 
 _log = logging.getLogger(__name__)
 
@@ -324,7 +324,33 @@ def standardized_quarter_hourly_profile(year: int,
     
     return quarter_hourly_intervals, electricity_demand, heating_demand, hot_water_demand
 
-def calculation_load_profile(TRY: str, 
+@cached_data
+def _daily_factors() -> Dict[str, Tuple[float, float, float]]:
+    """
+    VDI 4655 daily energy factors, read once per process.
+
+    :return: Profile day (e.g. ``'EFH9WWH'``) → (Fheiz,TT, Fel,TT, FTWW,TT);
+        shared, must not be modified
+    :rtype: Dict[str, Tuple[float, float, float]]
+    :raises FileNotFoundError: If the factor file is missing
+    """
+    factors_file = get_resource_path('data\\VDI 4655 profiles\\VDI 4655 data\\Faktoren.csv')
+
+    try:
+        factor_data = pd.read_csv(factors_file, sep=';')
+    except FileNotFoundError:
+        raise FileNotFoundError(f"VDI 4655 factor data not found: {factors_file}")
+
+    factor_data = factor_data[factor_data['Profiltag'].notna()]
+    factors: Dict[str, Tuple[float, float, float]] = {}
+    for tag, heating, electricity, hot_water in zip(
+            factor_data['Profiltag'], factor_data['Fheiz,TT'],
+            factor_data['Fel,TT'], factor_data['FTWW,TT']):
+        # If a profile day is listed more than once, the first row counts
+        factors.setdefault(tag, (heating, electricity, hot_water))
+    return factors
+
+def calculation_load_profile(TRY: str,
                            building_type: str, 
                            number_people_household: int, 
                            annual_electricity_kWh: float, 
@@ -363,13 +389,8 @@ def calculation_load_profile(TRY: str,
     .. note::
         Implements complete VDI 4655 workflow with day-type classification and energy balance normalization.
     """
-    # Load VDI 4655 scaling factors
-    factors_file = get_resource_path('data\\VDI 4655 profiles\\VDI 4655 data\\Faktoren.csv')
-    
-    try:
-        factor_data = pd.read_csv(factors_file, sep=';')
-    except FileNotFoundError:
-        raise FileNotFoundError(f"VDI 4655 factor data not found: {factors_file}")
+    # Load VDI 4655 scaling factors (file is read once per process)
+    factors = _daily_factors()
 
     # Generate temporal arrays
     days_of_year, months, days, weekdays = generate_year_months_days_weekdays(year)
@@ -394,29 +415,18 @@ def calculation_load_profile(TRY: str,
     type_day = np.char.add(np.char.add(season, day_type), cloud_classification)
     profile_day = np.char.add((building_type + climate_zone), type_day)
 
-    # Extract scaling factors for each day
-    f_heating_tt = np.zeros(len(profile_day))
-    f_el_tt = np.zeros(len(profile_day))
-    f_hotwater_tt = np.zeros(len(profile_day))
-
-    for i, tag in enumerate(profile_day):
-        try:
-            factor_row = factor_data[factor_data['Profiltag'] == tag]
-            if not factor_row.empty:
-                index = factor_row.index[0]
-                f_heating_tt[i] = factor_data.loc[index, 'Fheiz,TT']
-                f_el_tt[i] = factor_data.loc[index, 'Fel,TT']
-                f_hotwater_tt[i] = factor_data.loc[index, 'FTWW,TT']
-            else:
-                _log.warning("No factors found for profile day %s — using defaults", tag)
-                f_heating_tt[i] = 1.0
-                f_el_tt[i] = 0.0
-                f_hotwater_tt[i] = 0.0
-        except Exception as e:
-            _log.warning("Error processing profile day %s: %s", tag, e)
-            f_heating_tt[i] = 1.0
-            f_el_tt[i] = 0.0
-            f_hotwater_tt[i] = 0.0
+    # Extract scaling factors for each day: look up each distinct profile day
+    # once (a year has at most ten) and expand to all days
+    tags, day_index = np.unique(profile_day, return_inverse=True)
+    missing = [tag for tag in tags if tag not in factors]
+    if missing:
+        for tag in profile_day[np.isin(profile_day, missing)]:
+            _log.warning("No factors found for profile day %s — using defaults", tag)
+    tag_factors = np.array(
+        [factors.get(tag, (1.0, 0.0, 0.0)) for tag in tags], dtype=float).reshape(-1, 3)
+    f_heating_tt = tag_factors[day_index, 0]
+    f_el_tt = tag_factors[day_index, 1]
+    f_hotwater_tt = tag_factors[day_index, 2]
 
     # Calculate daily energy consumption using VDI 4655 formulas
     daily_electricity = annual_electricity_kWh * ((1/365) + (number_people_household * f_el_tt))
