@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] — 2026-09-30
+
+### Changed
+- `bdew.calculate()` and `vdi4655.calculate()` are much faster when called
+  repeatedly, e.g. once per building. Per call after the first one in a
+  process: BDEW ≈ 28 ms → ≈ 1.6 ms, VDI 4655 ≈ 115 ms → ≈ 2.4 ms. The first
+  call takes ≈ 27 ms (BDEW) and ≈ 35 ms (VDI 4655, previously ≈ 115 ms).
+  Signatures and results are unchanged
+- TRY weather files are parsed once and cached per process; a file is read
+  again when its modification time or size changes
+- Bundled coefficient, factor and profile tables are read once per process and
+  addressed through lookup tables instead of pandas merges and row filters
+- Per-day and per-interval Python loops are replaced by numpy operations
+- Stochastic post-processing is faster: `stochastic=True` ≈ 185 ms → ≈ 4.5 ms,
+  `dhw_draw_events=True` ≈ 45 ms → ≈ 9 ms; results for a given seed are unchanged
+
+### Added
+- `pyslpheat.clear_caches()` drops all cached weather files and tables
+- Test suite (`pytest`): golden-master tests for both `calculate()` functions
+  recorded from 0.3.0, comparisons of the helper functions with their 0.3.0
+  implementations, and tests of the cache behaviour
+- `benchmarks/bench_calculate.py` for wall-clock measurements
+- Documentation: new section *Performance and caching* in
+  `docs/DOCUMENTATION.md` (memory use, invalidation, thread safety)
+
 ## [0.3.0] — 2026-03-26
 
 ### Added
