@@ -1,0 +1,961 @@
+{
+  "recorded_with": {
+    "commit": "2751480ce7a82a35ddd8cf1b72c5391c189f2bef",
+    "dirty": false,
+    "python": "3.12.10",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "platform": "win32",
+    "machine": "AMD64"
+  },
+  "cases": {
+    "bdew_GBD03_2023": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2023::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2023::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_dhw_share": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GKO03_2023": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GKO03_2023::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GKO03_2023::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HEF03_2021": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2021-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HEF03_2021::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HEF03_2021::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HEF33_2023": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HEF33_2023::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HEF33_2023::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GKO34_2023_dhw_share": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GKO34_2023_dhw_share::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GKO34_2023_dhw_share::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GMF03_2023": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "could not convert string to float: '5,18'"
+    },
+    "bdew_GBD03_2023_dhs_call": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2023_dhs_call::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2023_dhs_call::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_dhs_call_defaults": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhs_call_defaults::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_dhs_call_defaults::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GBD03_2023_heating_limit": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2023_heating_limit::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2023_heating_limit::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_heating_exponent": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_heating_exponent::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_heating_exponent::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_exponent_limit_share": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_exponent_limit_share::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_exponent_limit_share::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_dhw_flat": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhw_flat::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_dhw_flat::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_dhw_share_invalid": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share_invalid::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share_invalid::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_dhw_share_nan": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share_invalid::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share_invalid::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GKO03_2023_mode_b": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GKO03_2023_mode_b::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GKO03_2023_mode_b::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GKO03_2023_mode_c": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GKO03_2023_mode_c::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GKO03_2023_mode_c::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HEF33_2023_mode_c_limit_share": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HEF33_2023_mode_c_limit_share::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HEF33_2023_mode_c_limit_share::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_stochastic": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_stochastic::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_stochastic::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GBD03_2023_stochastic_custom": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2023_stochastic_custom::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2023_stochastic_custom::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2023_draw_events": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2023_dhw_share::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2023_draw_events::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_HEF03_2023_stochastic_draw_events": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HEF03_2023_stochastic_draw_events::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HEF03_2023_stochastic_draw_events::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023::temperature_C"
+        }
+      }
+    },
+    "bdew_GBD03_2023_try2045_winter": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8760,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2023_try2045_winter::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2023_try2045_winter::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2023_try2045_winter::temperature_C"
+        }
+      }
+    },
+    "bdew_GBD03_2024_try8760": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "operands could not be broadcast together with shapes (365,) (366,) "
+    },
+    "bdew_GBD03_2024_leap": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8784,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2024_leap::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2024_leap::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2024_leap::temperature_C"
+        }
+      }
+    },
+    "bdew_HMF03_2024_leap_stochastic_draw_events": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8784,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_HMF03_2024_leap_stochastic_draw_events::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_HMF03_2024_leap_stochastic_draw_events::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2024_leap::temperature_C"
+        }
+      }
+    },
+    "bdew_unknown_profile": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "Profile 'XXX99' not found in BDEW coefficient data"
+    },
+    "bdew_no_scaling_input": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "Provide annual_heat_kWh > 0, or peak_design_kW + design_temperature, or both"
+    },
+    "vdi_EFH_2023_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2023_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2023_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2023_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_MFH_2023_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_MFH_2023_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_MFH_2023_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_MFH_2023_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_EFH_2023_no_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2023_no_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2023_no_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2023_no_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_MFH_2021_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2021-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_MFH_2021_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_MFH_2021_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_MFH_2021_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_EFH_2023_zone3": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2023_zone3::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2023_zone3::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2023_zone3::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_MFH_2023_try2045_summer": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_MFH_2023_try2045_summer::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_MFH_2023_try2045_summer::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_MFH_2023_try2045_summer::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_MFH_2023_try2045_summer::temperature_C"
+        }
+      }
+    },
+    "vdi_EFH_2023_unknown_zone": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2023-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35040,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2023_unknown_zone::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2023_unknown_zone::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2023_unknown_zone::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2023_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_EFH_2024_try8760": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "operands could not be broadcast together with shapes (365,) (366,) "
+    },
+    "vdi_EFH_2024_leap_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35136,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2024_leap_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2024_leap_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2024_leap_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2024_leap_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_MFH_2024_leap_no_holidays": {
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35136,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_MFH_2024_leap_no_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_MFH_2024_leap_no_holidays::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_MFH_2024_leap_no_holidays::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2024_leap_holidays::temperature_C"
+        }
+      }
+    },
+    "vdi_invalid_building_type": {
+      "status": "error",
+      "type": "ValueError",
+      "message": "Building type must be one of ['EFH', 'MFH']"
+    }
+  }
+}
