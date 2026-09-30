@@ -134,3 +134,48 @@ def vdi_standardized_quarter_hourly_profile(year, building_type, days_of_year, t
     hot_water_demand = np.nan_to_num(hot_water_demand, nan=1.0)
 
     return quarter_hourly_intervals, electricity_demand, heating_demand, hot_water_demand
+
+
+def bdew_apply_peak_jitter(series, max_shift, rng):
+    result = series.copy()
+    for day in series.index.normalize().unique():
+        mask = series.index.normalize() == day
+        vals = series[mask].values
+        if len(vals) < 24:
+            continue
+        shift = int(rng.integers(-max_shift, max_shift + 1))
+        result[mask] = np.roll(vals, shift)
+    return result
+
+
+def bdew_apply_dhw_draw_events(dhw, draws_per_day, seed):
+    rng = np.random.default_rng(seed)
+    original_dhw = dhw.sum()
+
+    new_dhw = np.zeros(len(dhw))
+    days = pd.Series(dhw.index.date).unique()
+    hour_index = {ts: i for i, ts in enumerate(dhw.index)}
+
+    for day in days:
+        n_draws = rng.poisson(draws_per_day)
+        for _ in range(n_draws):
+            if rng.random() < 0.60:
+                start_h = int(rng.uniform(5, 9))
+            else:
+                start_h = int(rng.uniform(17, 22))
+
+            duration = int(rng.uniform(1, 4))
+            amp = min(rng.lognormal(0.0, 0.4), 2.0)
+
+            for dh in range(duration):
+                h = (start_h + dh) % 24
+                ts = pd.Timestamp(year=day.year, month=day.month,
+                                  day=day.day, hour=h)
+                if ts in hour_index:
+                    new_dhw[hour_index[ts]] += amp
+
+    total = new_dhw.sum()
+    if total > 0:
+        new_dhw *= original_dhw / total
+
+    return pd.Series(new_dhw, index=dhw.index, dtype=float)
