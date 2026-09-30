@@ -31,7 +31,7 @@ from .bdew    import calculate as bdew_calculate      # noqa: F401
 from .vdi4655 import calculate as vdi4655_calculate   # noqa: F401
 from ._cache  import clear_caches                     # noqa: F401
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __author__  = "Jonas Pfeiffer"
 
 __all__ = [
