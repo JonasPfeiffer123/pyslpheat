@@ -29,8 +29,10 @@ from typing import Dict, Tuple
 
 try:
     from ._cache import FileCache, cached_data, read_only
+    from ._weather import fit_to_year
 except ImportError:  # executed as a script: python pyslpheat/vdi4655.py
     from _cache import FileCache, cached_data, read_only
+    from _weather import fit_to_year
 
 _log = logging.getLogger(__name__)
 
@@ -348,7 +350,8 @@ def calculation_load_profile(TRY: str,
     """
     Calculate comprehensive VDI 4655 load profiles.
 
-    :param TRY: Path to Test Reference Year data
+    :param TRY: Path to Test Reference Year weather data with 8760 hourly
+        values; for a leap year 8784, or 8760 and 29 February repeats 28 February
     :type TRY: str
     :param building_type: VDI 4655 type (EFH, MFH)
     :type building_type: str
@@ -369,7 +372,7 @@ def calculation_load_profile(TRY: str,
     :return: Tuple of (intervals, electricity, heating, dhw, temperature) in kWh per 15min
     :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
     :raises FileNotFoundError: If TRY or factor data missing
-    :raises ValueError: If parameters invalid
+    :raises ValueError: If parameters invalid or the weather data does not fit the year
     :raises KeyError: If VDI 4655 data incomplete
     
     .. note::
@@ -383,6 +386,8 @@ def calculation_load_profile(TRY: str,
     
     # Import and process weather data
     temperature, _, _, _, degree_of_coverage = import_TRY(TRY)
+    # Leap year with 365 days of weather data: 29 February repeats 28 February
+    temperature, degree_of_coverage = fit_to_year(year, temperature, degree_of_coverage)
     daily_avg_temperature, daily_avg_degree_of_coverage = calculate_daily_averages(temperature, degree_of_coverage)
     
     # VDI 4655 day-type classification
@@ -414,10 +419,12 @@ def calculation_load_profile(TRY: str,
     f_el_tt = tag_factors[day_index, 1]
     f_hotwater_tt = tag_factors[day_index, 2]
 
-    # Calculate daily energy consumption using VDI 4655 formulas
-    daily_electricity = annual_electricity_kWh * ((1/365) + (number_people_household * f_el_tt))
+    # Calculate daily energy consumption using VDI 4655 formulas; the standard's
+    # 1/365 is the share of one day, i.e. 1/366 in a leap year
+    days_per_year = len(days_of_year)
+    daily_electricity = annual_electricity_kWh * ((1/days_per_year) + (number_people_household * f_el_tt))
     daily_heating = annual_heating_kWh * f_heating_tt
-    daily_hot_water = annual_dhw_kWh * ((1/365) + (number_people_household * f_hotwater_tt))
+    daily_hot_water = annual_dhw_kWh * ((1/days_per_year) + (number_people_household * f_hotwater_tt))
 
     # Generate standardized quarter-hourly profiles
     quarter_hourly_intervals, electricity_profile, heating_profile, hot_water_profile = \
@@ -466,7 +473,8 @@ def calculate(annual_heating_kWh: float,
     :type year: int
     :param climate_zone: German climate zone 1-15
     :type climate_zone: str
-    :param TRY: Path to Test Reference Year data
+    :param TRY: Path to Test Reference Year weather data with 8760 hourly
+        values; for a leap year 8784, or 8760 and 29 February repeats 28 February
     :type TRY: str
     :param holidays: Holiday dates array
     :type holidays: np.ndarray
@@ -474,7 +482,8 @@ def calculate(annual_heating_kWh: float,
         ``Q_heat_kWh``, ``Q_dhw_kWh``, ``Q_total_kWh``, ``Q_electricity_kWh``,
         ``temperature_C``. Values are energy per 15-min interval [kWh].
     :rtype: pd.DataFrame
-    :raises ValueError: If parameters invalid or negative
+    :raises ValueError: If parameters invalid or negative, or the weather data does
+        not fit the year
     :raises FileNotFoundError: If TRY or VDI 4655 data missing
     :raises RuntimeError: If calculation fails
     """
