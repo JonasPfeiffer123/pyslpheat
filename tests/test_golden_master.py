@@ -2,7 +2,8 @@
 Golden-master tests for ``bdew.calculate`` and ``vdi4655.calculate``.
 
 The expected outputs were recorded from the unoptimised reference
-implementation (see ``generate_golden.py``). Every case is checked twice:
+implementation (see ``generate_golden.py``); cases re-recorded since then
+carry a ``note`` in the metadata. Every case is checked twice:
 
 * ``test_matches_golden`` – index exactly, all columns with ``rtol=1e-12``.
 * ``test_bitwise_identical`` – all columns byte for byte. Bitwise results
