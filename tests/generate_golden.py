@@ -70,6 +70,12 @@ def _index_spec(index: pd.DatetimeIndex) -> dict:
     return spec
 
 
+def _referenced(cases: dict) -> set:
+    """Keys of all stored arrays the given cases refer to."""
+    return {spec["key"] for case in cases.values()
+            for spec in case.get("columns", {}).values() if "key" in spec}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Record the golden master.")
     parser.add_argument("--only", nargs="+", metavar="CASE",
@@ -102,6 +108,11 @@ def main() -> None:
             parser.error("the golden master was recorded in another environment "
                          f"({', '.join(differing)} differ); re-record all cases instead")
         names = args.only
+        # Forget the previous recording of these cases so their array names are free
+        for name in names:
+            meta["cases"].pop(name, None)
+        used = _referenced(meta["cases"])
+        arrays = {key: values for key, values in arrays.items() if key in used}
     else:
         meta = {
             "recorded_with": {
@@ -151,8 +162,7 @@ def main() -> None:
 
     # Cases in definition order; drop arrays no case refers to any more
     meta["cases"] = {name: cases[name] for name in CASES}
-    used = {spec["key"] for case in meta["cases"].values()
-            for spec in case.get("columns", {}).values() if "key" in spec}
+    used = _referenced(meta["cases"])
     arrays = {key: values for key, values in arrays.items() if key in used}
 
     os.makedirs(GOLDEN_DIR, exist_ok=True)

@@ -2,12 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] — 2026-09-30
+
+### Added
+- Leap years in `bdew.calculate()` and `vdi4655.calculate()`: the result covers
+  all 366 days including 29 February (BDEW 8 784 hourly values, VDI 4655
+  35 136 quarter-hourly values). A TRY file with 8 760 hours is extended by
+  repeating 28 February for 29 February; a file with 8 784 hours is used as it
+  is. Weekdays and holidays follow the real calendar. Previously any leap year
+  with an 8 760-hour file failed with
+  `ValueError: operands could not be broadcast together with shapes (365,) (366,)`
+
+### Changed
+- VDI 4655 in leap years: the share of one day in the daily electricity and DHW
+  formula is 1/366 instead of 1/365. Leap-year results computed from 8 784-hour
+  weather files change by up to 0.1 % per interval (DHW) and 0.04 %
+  (electricity); annual totals are unchanged
+- Weather data whose number of hours fits neither the year nor, for a leap
+  year, 365 days now raises a `ValueError` that states the number of hours
+
+Results for non-leap years are unchanged bit for bit.
+
+### Documentation
+- README: known issue about the weekday numbering (holidays get Saturday
+  factors in BDEW; VDI 4655 treats Saturdays as Sundays); removed the
+  leap-year known issue
+
 ## [0.4.1] — 2026-09-30
 
 ### Fixed
 - BDEW profile type `GMF` no longer fails with
   `ValueError: could not convert string to float: '5,18'`. Three hourly factors
-  in `data/bdew/hourly_coefficients.csv` (Monday to Wednesday, 22.5 °C class,
+  in `data/bdew/hourly_coefficients.csv` (weekday codes 1 to 3, 22.5 °C class,
   hour 5) were written with a decimal comma and are now `5.18`, the value the
   other weekdays have in the same place and the one that makes the 24 factors
   of the day add up to 100 %. Results of all other profile types are unchanged

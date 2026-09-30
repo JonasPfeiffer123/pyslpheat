@@ -632,9 +632,32 @@
       }
     },
     "bdew_GBD03_2024_try8760": {
-      "status": "error",
-      "type": "ValueError",
-      "message": "operands could not be broadcast together with shapes (365,) (366,) "
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[s]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 3600,
+        "periods": 8784,
+        "freq": null
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "bdew_GBD03_2024_try8760::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "bdew_GBD03_2024_try8760::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "temperature_C": {
+          "key": "bdew_GBD03_2024_leap::temperature_C"
+        }
+      },
+      "note": "Re-recorded for 0.4.2: leap years accept 8760-hour weather files (29 February repeats 28 February); the case raised ValueError before."
     },
     "bdew_GBD03_2024_leap": {
       "status": "ok",
@@ -911,9 +934,35 @@
       }
     },
     "vdi_EFH_2024_try8760": {
-      "status": "error",
-      "type": "ValueError",
-      "message": "operands could not be broadcast together with shapes (365,) (366,) "
+      "status": "ok",
+      "index": {
+        "dtype": "datetime64[ns]",
+        "start": "2024-01-01T00:00:00",
+        "step_seconds": 900,
+        "periods": 35136,
+        "freq": "15min"
+      },
+      "columns": {
+        "Q_heat_kWh": {
+          "key": "vdi_EFH_2024_leap_holidays::Q_heat_kWh"
+        },
+        "Q_dhw_kWh": {
+          "key": "vdi_EFH_2024_try8760::Q_dhw_kWh"
+        },
+        "Q_total_kWh": {
+          "sum_of": [
+            "Q_heat_kWh",
+            "Q_dhw_kWh"
+          ]
+        },
+        "Q_electricity_kWh": {
+          "key": "vdi_EFH_2024_try8760::Q_electricity_kWh"
+        },
+        "temperature_C": {
+          "key": "vdi_EFH_2024_leap_holidays::temperature_C"
+        }
+      },
+      "note": "Re-recorded for 0.4.2: leap years accept 8760-hour weather files (29 February repeats 28 February); the case raised ValueError before."
     },
     "vdi_EFH_2024_leap_holidays": {
       "status": "ok",
@@ -929,7 +978,7 @@
           "key": "vdi_EFH_2024_leap_holidays::Q_heat_kWh"
         },
         "Q_dhw_kWh": {
-          "key": "vdi_EFH_2024_leap_holidays::Q_dhw_kWh"
+          "key": "vdi_EFH_2024_try8760::Q_dhw_kWh"
         },
         "Q_total_kWh": {
           "sum_of": [
@@ -938,12 +987,13 @@
           ]
         },
         "Q_electricity_kWh": {
-          "key": "vdi_EFH_2024_leap_holidays::Q_electricity_kWh"
+          "key": "vdi_EFH_2024_try8760::Q_electricity_kWh"
         },
         "temperature_C": {
           "key": "vdi_EFH_2024_leap_holidays::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.2: the VDI 4655 day share 1/365 is 1/366 in leap years (electricity and DHW change by up to 0.1 % per interval)."
     },
     "vdi_MFH_2024_leap_no_holidays": {
       "status": "ok",
@@ -973,7 +1023,8 @@
         "temperature_C": {
           "key": "vdi_EFH_2024_leap_holidays::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.2: the VDI 4655 day share 1/365 is 1/366 in leap years (electricity and DHW change by up to 0.1 % per interval)."
     },
     "vdi_invalid_building_type": {
       "status": "error",

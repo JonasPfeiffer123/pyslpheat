@@ -60,8 +60,8 @@ The application has two tabs — one for each calculation standard:
 
 | Tab | Standard | Output resolution |
 |-----|----------|-------------------|
-| BDEW SigLinDe | BDEW/VKU/GEODE SigLinDe | Hourly (8 760 values) |
-| VDI 4655 | VDI 4655 | 15-minute (35 040 values) |
+| BDEW SigLinDe | BDEW/VKU/GEODE SigLinDe | Hourly (8 760 values, 8 784 in leap years) |
+| VDI 4655 | VDI 4655 | 15-minute (35 040 values, 35 136 in leap years) |
 
 Both tabs offer the full parameter set including stochastic post-processing,
 discrete DHW draw events (BDEW), and automatic import of statutory German
@@ -106,15 +106,21 @@ and thread safety are described in
 
 ## Known issues
 
-The test suite pins the current behaviour of the first two items
+The golden-master tests pin the current behaviour of the first two items
 (`tests/golden_cases.py`), so fixing one of them shows up there as an intended
 change.
 
-- **Leap years need a weather file with 8784 hours.** DWD TRY files, including
-  the bundled ones, cover 8760 hours. With a leap year such as `year=2024`,
-  `bdew_calculate` and `vdi4655_calculate` both raise
-  `ValueError: operands could not be broadcast together with shapes (365,) (366,)`.
-  Use a non-leap year or supply a weather file with 366 days.
+- **Holidays and Sundays get the wrong weekday code.** The calendar helpers
+  (`generate_year_months_days_weekdays`) number weekdays 1 = Sunday to
+  7 = Saturday, consistent with the BDEW coefficient tables, although their
+  docstrings say 1 = Monday. Two places assume 7 = Sunday instead:
+  - BDEW: public holidays are set to weekday 7 and so get the Saturday
+    factors and hourly shape, not the Sunday ones the BDEW guideline
+    (§6.1.1) prescribes.
+  - VDI 4655: the Sunday/holiday type days (`…S…`) go to Saturdays, and
+    Sundays are treated as working days.
+
+  Fixing this changes results for every year.
 - **`peak_design_kW` without `design_temperature` is ignored.** Design-load
   scaling (modes B and C) needs both values. If `annual_heat_kWh` and only
   `peak_design_kW` are given, the profile is scaled by annual energy alone and
