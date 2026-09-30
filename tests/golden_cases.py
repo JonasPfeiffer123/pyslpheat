@@ -62,7 +62,7 @@ CASES: Dict[str, Dict[str, Any]] = {
         annual_heat_kWh=18_000.0, profile_type="HEF", subtype="33", year=2023),
     "bdew_GKO34_2023_dhw_share": _bdew(
         annual_heat_kWh=80_000.0, profile_type="GKO", subtype="34", year=2023, dhw_share=0.1),
-    # GMF: hourly_coefficients.csv holds three '5,18' entries (decimal comma)
+    # GMF raised ValueError up to 0.4.0: three hourly factors had a decimal comma
     "bdew_GMF03_2023": _bdew(
         annual_heat_kWh=60_000.0, profile_type="GMF", subtype="03", year=2023),
     # ── BDEW: call exactly as issued by DistrictHeatingSim ───────────────────
