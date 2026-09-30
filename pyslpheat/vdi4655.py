@@ -27,22 +27,21 @@ import pandas as pd
 import numpy as np
 from typing import Tuple
 
+try:
+    from ._cache import FileCache, read_only
+except ImportError:  # executed as a script: python pyslpheat/vdi4655.py
+    from _cache import FileCache, read_only
+
 _log = logging.getLogger(__name__)
 
 
 # ── Local helper implementations (no external package dependency) ─────────────
 
-def import_TRY(filename: str):
+def _read_TRY(filename: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Read TRY weather file and return meteorological arrays.
+    Parse a TRY weather file into read-only meteorological arrays.
 
-    Searches for the '***' separator line robustly (compatible with all DWD TRY
-    formats). Columns follow the standard TRY definition:
-      RW HW MM DD HH t p WR WG N x RF B D A E IL
-      index: 0  1  2  3  4 5 6  7  8 9 ...    12 13
-
-    :return: (temperature [°C], windspeed [m/s], direct_rad [W/m²],
-              global_rad [W/m²], cloud_cover [oktas 0-8])
+    :return: (temperature, windspeed, direct_rad, global_rad, cloud_cover)
     """
     temps, winds, dirs, diffs, clouds = [], [], [], [], []
     past_header = False
@@ -69,7 +68,31 @@ def import_TRY(filename: str):
     diffuse_radiation = np.array(diffs, dtype=float)
     global_radiation = direct_radiation + diffuse_radiation
     cloud_cover      = np.array(clouds, dtype=float)
-    return temperature, windspeed, direct_radiation, global_radiation, cloud_cover
+    return tuple(read_only(a) for a in (
+        temperature, windspeed, direct_radiation, global_radiation, cloud_cover))
+
+
+_TRY_CACHE = FileCache(_read_TRY)
+
+
+def import_TRY(filename: str):
+    """
+    Read TRY weather file and return meteorological arrays.
+
+    Searches for the '***' separator line robustly (compatible with all DWD TRY
+    formats). Columns follow the standard TRY definition:
+      RW HW MM DD HH t p WR WG N x RF B D A E IL
+      index: 0  1  2  3  4 5 6  7  8 9 ...    12 13
+
+    :return: (temperature [°C], windspeed [m/s], direct_rad [W/m²],
+              global_rad [W/m²], cloud_cover [oktas 0-8])
+
+    .. note::
+        The parsed file is cached per process and read again when its
+        modification time or size changes. The returned arrays are copies
+        and may be modified freely.
+    """
+    return tuple(a.copy() for a in _TRY_CACHE.get(filename))
 
 
 _VDI4655_DATA_DIR = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data", "vdi4655")
