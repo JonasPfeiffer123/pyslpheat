@@ -28,15 +28,15 @@ import pandas as pd
 import numpy as np
 import math
 import os
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 _log = logging.getLogger(__name__)
 from datetime import date as _date, timedelta as _timedelta
 
 try:
-    from ._cache import FileCache, read_only
+    from ._cache import FileCache, cached_data, read_only
 except ImportError:  # executed as a script: python pyslpheat/bdew.py
-    from _cache import FileCache, read_only
+    from _cache import FileCache, cached_data, read_only
 
 # Data directory for BDEW CSV files
 _HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "bdew")
@@ -335,8 +335,102 @@ def get_weekday_factor(daily_weekdays: np.ndarray,
         raise KeyError(f"Missing weekday column in BDEW data: {e}") from e
     except ValueError as e:
         raise ValueError(f"Invalid weekday factor value: {e}") from e
-    
+
     return weekday_factors
+
+@cached_data
+def _daily_coefficients() -> pd.DataFrame:
+    """
+    BDEW daily coefficient table, read once per process.
+
+    :return: Contents of ``daily_coefficients.csv``; shared, must not be modified
+    :rtype: pd.DataFrame
+    """
+    return pd.read_csv(os.path.join(_HERE, 'daily_coefficients.csv'), delimiter=';')
+
+@cached_data
+def _profile_parameters(profile: str) -> Tuple[Tuple[float, ...], np.ndarray]:
+    """
+    Coefficients and weekday factors of one profile, looked up once per process.
+
+    :param profile: Profile type and subtype, e.g. ``'GBD03'``
+    :type profile: str
+    :return: Tuple of ((A, B, C, D, mH, bH, mW, bW), weekday factors Monday..Sunday);
+        the factor array is read-only
+    :rtype: Tuple[Tuple[float, ...], np.ndarray]
+    :raises ValueError: If profile not found in data
+    """
+    daily_data = _daily_coefficients()
+    coefficients = get_coefficients(profile, "", daily_data)
+    weekday_factors = get_weekday_factor(np.arange(1, 8), profile, "", daily_data)
+    return coefficients, read_only(weekday_factors)
+
+@cached_data
+def _hourly_factor_tables() -> Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    """
+    BDEW hourly shape factors as one lookup table per profile type.
+
+    :return: Profile type → (weekdays, temperatures, hours, factors) with sorted key
+        arrays and ``factors[w, t, h]`` the hourly factor for ``weekdays[w]``,
+        ``temperatures[t]`` and ``hours[h]``; read-only
+    :rtype: Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]
+    """
+    hourly_data = pd.read_csv(os.path.join(_HERE, 'hourly_coefficients.csv'), delimiter=';')
+    tables = {}
+    for profile_type, rows in hourly_data.groupby('Typ', sort=False):
+        weekdays, w = np.unique(rows['Wochentag'].values, return_inverse=True)
+        temperatures, t = np.unique(rows['Temperatur'].values, return_inverse=True)
+        hours, h = np.unique(rows['Stunde'].values, return_inverse=True)
+        factors = rows['Stundenfaktor'].values
+        try:
+            factors = factors.astype(float)
+        except ValueError:
+            # Entries that are not numbers stay text and fail when they are used
+            factors = factors.astype(object)
+        table = np.full((len(weekdays), len(temperatures), len(hours)), np.nan,
+                        dtype=factors.dtype)
+        table[w, t, h] = factors
+        tables[profile_type] = tuple(
+            read_only(a) for a in (weekdays, temperatures, hours, table))
+    return tables
+
+def _positions(keys: np.ndarray, values: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Locate *values* in the sorted array *keys*.
+
+    :return: Tuple of (position in keys, whether the value is present in keys)
+    :rtype: Tuple[np.ndarray, np.ndarray]
+    """
+    position = np.minimum(np.searchsorted(keys, values), len(keys) - 1)
+    return position, keys[position] == values
+
+def _hourly_factors(profile_type: str,
+                    hourly_weekdays: np.ndarray,
+                    temperature_class: np.ndarray,
+                    daily_hours: np.ndarray) -> np.ndarray:
+    """
+    Look up the hourly shape factor for each hour of the year.
+
+    :param profile_type: BDEW building type
+    :type profile_type: str
+    :param hourly_weekdays: Weekday number of each hour
+    :type hourly_weekdays: np.ndarray
+    :param temperature_class: Temperature class [°C] of each hour, as tabulated
+    :type temperature_class: np.ndarray
+    :param daily_hours: Hour of day (0-23) of each hour
+    :type daily_hours: np.ndarray
+    :return: Hourly factors; NaN where the table has no entry
+    :rtype: np.ndarray
+    :raises ValueError: If a selected table entry is not a number
+    """
+    table = _hourly_factor_tables().get(profile_type)
+    if table is None:
+        return np.full(len(hourly_weekdays), np.nan)
+    weekdays, temperatures, hours, factors = table
+    w, w_found = _positions(weekdays, hourly_weekdays)
+    t, t_found = _positions(temperatures, temperature_class)
+    h, h_found = _positions(hours, daily_hours)
+    return np.where(w_found & t_found & h_found, factors[w, t, h], np.nan).astype(float)
 
 def _apply_peak_jitter(series: pd.Series, max_shift: int, rng: np.random.Generator) -> pd.Series:
     """
@@ -554,12 +648,9 @@ def calculate(annual_heat_kWh: Optional[float],
         if _date.fromisoformat(str(d)) in holiday_dates:
             daily_weekdays[i] = 7
 
-    # Load BDEW coefficient data
-    daily_data = pd.read_csv(os.path.join(_HERE, 'daily_coefficients.csv'), delimiter=';')
-    
-    # Extract building-specific coefficients
-    h_A, h_B, h_C, h_D, mH, bH, mW, bW = get_coefficients(profile_type, subtype, daily_data)
-    
+    # Building-specific coefficients and weekday factors (table is read once per process)
+    (h_A, h_B, h_C, h_D, mH, bH, mW, bW), weekday_factors = _profile_parameters(profile_type + subtype)
+
     # Linear temperature corrections based on allocation temperature (BDEW guideline p. 41-42)
     lin_H = (np.nan_to_num(mH * daily_alloc_temp + bH)
              if mH != 0 or bH != 0 else np.zeros(len(daily_alloc_temp)))
@@ -579,8 +670,8 @@ def calculate(annual_heat_kWh: Optional[float],
 
     h_T_total = h_T_heating + h_T_dhw
 
-    # Apply weekday factors
-    F_D = get_weekday_factor(daily_weekdays, profile_type, subtype, daily_data)
+    # Apply weekday factors (daily_weekdays: 1=Monday .. 7=Sunday)
+    F_D = weekday_factors[daily_weekdays - 1]
 
     # ── Normalization: KW and optional heating slope factor α ────────────────
     #
@@ -722,39 +813,9 @@ def calculate(annual_heat_kWh: Optional[float],
     hourly_daily_heat_demand_heating = np.repeat(daily_heat_demand_heating, 24)
     hourly_daily_heat_demand_dhw     = np.repeat(daily_heat_demand_dhw, 24)
 
-    # Load BDEW hourly coefficient data
-    hourly_data = pd.read_csv(os.path.join(_HERE, 'hourly_coefficients.csv'), delimiter=';')
-    filtered_hourly_data = hourly_data[hourly_data["Typ"] == profile_type]
-
-    # Create conditions dataframe for coefficient lookup
-    # Note: column names ('Wochentag', 'Stunde', 'Temperatur') are fixed by the CSV schema
-    hourly_conditions = pd.DataFrame({
-        'Wochentag': hourly_weekdays,
-        'TemperaturLower': lower_limit,
-        'TemperaturUpper': upper_limit,
-        'Stunde': daily_hours
-    })
-
-    # Merge hourly conditions with coefficient data for interpolation bounds
-    merged_data_T1 = pd.merge(
-        hourly_conditions,
-        filtered_hourly_data,
-        how='left',
-        left_on=['Wochentag', 'TemperaturLower', 'Stunde'],
-        right_on=['Wochentag', 'Temperatur', 'Stunde']
-    )
-
-    merged_data_T2 = pd.merge(
-        hourly_conditions,
-        filtered_hourly_data,
-        how='left',
-        left_on=['Wochentag', 'TemperaturUpper', 'Stunde'],
-        right_on=['Wochentag', 'Temperatur', 'Stunde']
-    )
-
-    # Extract hourly factors for interpolation
-    hour_factor_T1 = merged_data_T1["Stundenfaktor"].values.astype(float)
-    hour_factor_T2 = merged_data_T2["Stundenfaktor"].values.astype(float)
+    # Hourly factors at the interpolation bounds (tables are read once per process)
+    hour_factor_T1 = _hourly_factors(profile_type, hourly_weekdays, lower_limit, daily_hours)
+    hour_factor_T2 = _hourly_factors(profile_type, hourly_weekdays, upper_limit, daily_hours)
 
     # Perform linear interpolation between temperature bounds
     hour_factor_interpolation = hour_factor_T2 + (hour_factor_T1 - hour_factor_T2) * (
