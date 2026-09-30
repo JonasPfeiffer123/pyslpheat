@@ -33,8 +33,39 @@ from typing import Optional, Tuple
 _log = logging.getLogger(__name__)
 from datetime import date as _date, timedelta as _timedelta
 
+try:
+    from ._cache import FileCache, read_only
+except ImportError:  # executed as a script: python pyslpheat/bdew.py
+    from _cache import FileCache, read_only
+
 # Data directory for BDEW CSV files
 _HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "bdew")
+
+
+def _read_TRY(filepath: str) -> np.ndarray:
+    """
+    Parse the hourly temperatures of a DWD TRY .dat file.
+
+    :param filepath: Path to TRY .dat file
+    :type filepath: str
+    :return: Read-only hourly temperature [°C]
+    :rtype: np.ndarray
+    """
+    temperatures: list = []
+    past_header = False
+    with open(filepath, 'r', encoding='latin-1') as fh:
+        for line in fh:
+            if not past_header:
+                if line.strip().startswith('***'):
+                    past_header = True
+                continue
+            parts = line.split()
+            if len(parts) >= 6:
+                temperatures.append(float(parts[5]))
+    return read_only(np.array(temperatures, dtype=float))
+
+
+_TRY_CACHE = FileCache(_read_TRY)
 
 
 def import_TRY(filepath: str) -> Tuple[np.ndarray, None, None, None, None]:
@@ -49,19 +80,13 @@ def import_TRY(filepath: str) -> Tuple[np.ndarray, None, None, None, None]:
     :type filepath: str
     :return: (hourly_temperature, None, None, None, None)
     :rtype: Tuple[np.ndarray, None, None, None, None]
+
+    .. note::
+        The parsed file is cached per process and read again when its
+        modification time or size changes. The returned array is a copy and
+        may be modified freely.
     """
-    temperatures: list = []
-    past_header = False
-    with open(filepath, 'r', encoding='latin-1') as fh:
-        for line in fh:
-            if not past_header:
-                if line.strip().startswith('***'):
-                    past_header = True
-                continue
-            parts = line.split()
-            if len(parts) >= 6:
-                temperatures.append(float(parts[5]))
-    return np.array(temperatures, dtype=float), None, None, None, None
+    return _TRY_CACHE.get(filepath).copy(), None, None, None, None
 
 def generate_year_months_days_weekdays(year: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
