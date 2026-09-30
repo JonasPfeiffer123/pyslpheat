@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] — 2026-09-30
+
+### Fixed
+- BDEW profile type `GMF` no longer fails with
+  `ValueError: could not convert string to float: '5,18'`. Three hourly factors
+  in `data/bdew/hourly_coefficients.csv` (Monday to Wednesday, 22.5 °C class,
+  hour 5) were written with a decimal comma and are now `5.18`, the value the
+  other weekdays have in the same place and the one that makes the 24 factors
+  of the day add up to 100 %. Results of all other profile types are unchanged
+
 ## [0.4.0] — 2026-09-30
 
 ### Changed
