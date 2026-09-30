@@ -438,15 +438,28 @@ def _apply_peak_jitter(series: pd.Series, max_shift: int, rng: np.random.Generat
     Shift the hourly profile per day by ±max_shift hours (circular, within day).
     Daily sum is preserved.
     """
-    result = series.copy()
-    for day in series.index.normalize().unique():
-        mask = series.index.normalize() == day
-        vals = series[mask].values
-        if len(vals) < 24:
-            continue
-        shift = int(rng.integers(-max_shift, max_shift + 1))
-        result[mask] = np.roll(vals, shift)
-    return result
+    values = series.values
+    # Number the days in order of first appearance and count their values
+    day, days = pd.factorize(series.index.normalize())
+    count = np.bincount(day, minlength=len(days))
+
+    # One shift per complete day. Drawn one by one: a single array draw is not
+    # guaranteed to consume the random stream identically.
+    shift = np.array(
+        [int(rng.integers(-max_shift, max_shift + 1)) if n >= 24 else 0 for n in count],
+        dtype=np.intp)
+
+    # Rank of every value within its day, then roll all days at once:
+    # the value at rank r moves to rank (r + shift) mod n
+    order = np.argsort(day, kind='stable')
+    day = day[order]
+    first = (np.cumsum(count) - count)[day]
+    rank = np.arange(len(values)) - first
+    target = order[first + (rank + shift[day]) % count[day]]
+
+    result = values.copy()
+    result[target] = values[order]
+    return pd.Series(result, index=series.index, name=series.name)
 
 
 def _apply_lognormal_noise(series: pd.Series, sigma: float, rng: np.random.Generator) -> pd.Series:
@@ -491,10 +504,16 @@ def _apply_dhw_draw_events(
     original_dhw = dhw.sum()
 
     new_dhw = np.zeros(len(dhw))
-    days = pd.Series(dhw.index.date).unique()
-    hour_index = {ts: i for i, ts in enumerate(dhw.index)}
 
-    for day in days:
+    # rows[d][h]: position of the timestamp "day d, h o'clock" in the series,
+    # -1 if the series has none. Days are numbered in order of first appearance.
+    index = dhw.index
+    day, days = pd.factorize(index.normalize())
+    on_the_hour = np.flatnonzero(index == index.floor('h'))
+    rows = np.full((len(days), 24), -1)
+    rows[day[on_the_hour], index.hour.values[on_the_hour]] = on_the_hour
+
+    for day_rows in rows.tolist():
         n_draws = rng.poisson(draws_per_day)
         for _ in range(n_draws):
             if rng.random() < 0.60:
@@ -506,11 +525,9 @@ def _apply_dhw_draw_events(
             amp = min(rng.lognormal(0.0, 0.4), 2.0)     # same amplitude across block
 
             for dh in range(duration):
-                h  = (start_h + dh) % 24
-                ts = pd.Timestamp(year=day.year, month=day.month,
-                                  day=day.day, hour=h)
-                if ts in hour_index:
-                    new_dhw[hour_index[ts]] += amp
+                row = day_rows[(start_h + dh) % 24]
+                if row >= 0:
+                    new_dhw[row] += amp
 
     total = new_dhw.sum()
     if total > 0:

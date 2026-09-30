@@ -115,3 +115,44 @@ def test_standardized_quarter_hourly_profile_short_type_days():
     expected = ref.vdi_standardized_quarter_hourly_profile(2023, "MFH", days_of_year, type_days)
     for a, e in zip(actual, expected):
         _same(a, e)
+
+
+def _series(index, seed=0):
+    values = np.random.default_rng(seed).gamma(2.0, 3.0, size=len(index))
+    return pd.Series(values, index=index)
+
+
+def _stochastic_indexes():
+    full_year = pd.DatetimeIndex(bdew.calculate_hourly_intervals(2023).astype("datetime64[s]"))
+    leap_year = pd.DatetimeIndex(bdew.calculate_hourly_intervals(2024).astype("datetime64[s]"))
+    # Incomplete first and last day
+    partial = pd.date_range("2023-03-01 05:00", periods=24 * 9 + 7, freq="h")
+    # More than 24 values per day, most of them not on the full hour
+    half_hourly = pd.date_range("2023-06-01", periods=48 * 12, freq="30min")
+    # Same day not contiguous
+    shuffled = full_year[:24 * 30][np.random.default_rng(5).permutation(24 * 30)]
+    return {"full_year": full_year, "leap_year": leap_year, "partial": partial,
+            "half_hourly": half_hourly, "shuffled": shuffled}
+
+
+@pytest.mark.parametrize("name", ["full_year", "leap_year", "partial", "half_hourly", "shuffled"])
+@pytest.mark.parametrize("max_shift", [0, 1, 3])
+def test_peak_jitter(name, max_shift):
+    series = _series(_stochastic_indexes()[name])
+    rng_actual, rng_expected = np.random.default_rng(42), np.random.default_rng(42)
+    actual = bdew._apply_peak_jitter(series, max_shift, rng_actual)
+    expected = ref.bdew_apply_peak_jitter(series, max_shift, rng_expected)
+    assert actual.index.equals(expected.index)
+    _same(actual.values, expected.values)
+    # The random stream must be left in the same state
+    assert rng_actual.random() == rng_expected.random()
+
+
+@pytest.mark.parametrize("name", ["full_year", "leap_year", "partial", "half_hourly", "shuffled"])
+@pytest.mark.parametrize("draws_per_day", [0.0, 4.0, 9.5])
+def test_dhw_draw_events(name, draws_per_day):
+    series = _series(_stochastic_indexes()[name], seed=1)
+    actual = bdew._apply_dhw_draw_events(series, draws_per_day, 7)
+    expected = ref.bdew_apply_dhw_draw_events(series, draws_per_day, 7)
+    assert actual.index.equals(expected.index)
+    _same(actual.values, expected.values)
