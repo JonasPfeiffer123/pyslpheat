@@ -49,36 +49,32 @@ def test_hourly_table_keys_are_unique(hourly_data):
     assert sorted(hourly_data["Typ"].unique()) == PROFILE_TYPES
 
 
+def test_hourly_factors_are_numbers(hourly_data):
+    # Up to 0.4.0 three GMF factors were written with a decimal comma ('5,18'),
+    # which made the whole column text and every GMF calculation fail.
+    factors = hourly_data["Stundenfaktor"]
+    assert factors.dtype == np.float64
+    assert np.isfinite(factors).all()
+
+
+def test_hourly_factors_of_a_day_sum_to_100_percent(hourly_data):
+    sums = hourly_data.groupby(["Typ", "Wochentag", "Temperatur"])["Stundenfaktor"].sum()
+    assert len(sums) == len(PROFILE_TYPES) * 7 * 10
+    # The published tables are rounded to two decimals per hour
+    assert (sums - 100.0).abs().max() < 0.1
+
+
 @pytest.mark.parametrize("profile_type", PROFILE_TYPES)
 def test_hourly_factors_match_merge(profile_type, hourly_data):
     # Tabulated classes, classes outside the table, an untabulated value and NaN;
     # weekday 8 is not tabulated either
     temperatures = list(np.arange(-22.5, 35.0, 5.0)) + [3.0, np.nan]
     weekdays, temperature_class = _conditions(temperatures, weekdays=range(1, 9))
-    try:
-        expected = _merge_reference(hourly_data, profile_type, weekdays, temperature_class)
-    except ValueError as exc:
-        with pytest.raises(ValueError) as info:
-            bdew._hourly_factors(profile_type, weekdays, temperature_class)
-        assert str(info.value) == str(exc)
-        return
+    expected = _merge_reference(hourly_data, profile_type, weekdays, temperature_class)
     actual = bdew._hourly_factors(profile_type, weekdays, temperature_class)
     assert actual.dtype == expected.dtype
     assert np.isnan(expected).any() and not np.isnan(expected).all()
     assert np.array_equal(actual, expected, equal_nan=True)
-
-
-def test_hourly_factors_with_unparsable_entries(hourly_data):
-    # GMF holds three entries with a decimal comma at 22.5 °C. They must fail
-    # only when selected, as with the merge.
-    weekdays, temperature_class = _conditions([-17.5, 2.5, 17.5])
-    expected = _merge_reference(hourly_data, "GMF", weekdays, temperature_class)
-    actual = bdew._hourly_factors("GMF", weekdays, temperature_class)
-    assert np.array_equal(actual, expected)
-
-    weekdays, temperature_class = _conditions([22.5])
-    with pytest.raises(ValueError, match="could not convert string to float: '5,18'"):
-        bdew._hourly_factors("GMF", weekdays, temperature_class)
 
 
 def test_hourly_factors_unknown_profile_type(hourly_data):
