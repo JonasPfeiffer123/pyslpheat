@@ -164,16 +164,15 @@ def calculate_allocation_temperature(daily_avg_temperature: np.ndarray) -> np.nd
         T_allo(D) = (T_D·8 + T_{D-1}·4 + T_{D-2}·2 + T_{D-3}·1) / 15
     """
     weights = np.array([8.0, 4.0, 2.0, 1.0]) / 15.0
-    n = len(daily_avg_temperature)
-    result = np.empty(n)
-    for i in range(n):
-        result[i] = (
-            weights[0] * daily_avg_temperature[i]
-            + weights[1] * daily_avg_temperature[max(i - 1, 0)]
-            + weights[2] * daily_avg_temperature[max(i - 2, 0)]
-            + weights[3] * daily_avg_temperature[max(i - 3, 0)]
-        )
-    return result
+    temperature = np.asarray(daily_avg_temperature)
+    day = np.arange(len(temperature))
+    # The first days of the year reuse day 0 for the missing previous days
+    return (
+        weights[0] * temperature
+        + weights[1] * temperature[np.maximum(day - 1, 0)]
+        + weights[2] * temperature[np.maximum(day - 2, 0)]
+        + weights[3] * temperature[np.maximum(day - 3, 0)]
+    )
 
 def compute_holidays(year: int) -> set:
     """
@@ -326,11 +325,14 @@ def get_weekday_factor(daily_weekdays: np.ndarray,
     if profile_row.empty:
         raise ValueError(f"Profile '{profile}' not found in BDEW coefficient data")
     
-    # Extract weekday factors for each day
+    # Extract weekday factors: one table access per distinct weekday, then
+    # expand to all days
+    row = profile_row.iloc[0]
     try:
+        weekdays, day_index = np.unique(daily_weekdays, return_inverse=True)
         weekday_factors = np.array([
-            profile_row.iloc[0][str(day)] for day in daily_weekdays
-        ]).astype(float)
+            row[str(day)] for day in weekdays
+        ])[day_index].astype(float)
     except KeyError as e:
         raise KeyError(f"Missing weekday column in BDEW data: {e}") from e
     except ValueError as e:
@@ -643,10 +645,8 @@ def calculate(annual_heat_kWh: Optional[float],
     daily_alloc_temp = calculate_allocation_temperature(daily_avg_temperature)
 
     # Override weekday to 7 (Sunday) for statutory holidays (BDEW guideline §6.1.1)
-    holiday_dates = compute_holidays(year)
-    for i, d in enumerate(days_of_year):
-        if _date.fromisoformat(str(d)) in holiday_dates:
-            daily_weekdays[i] = 7
+    holiday_dates = np.array(sorted(compute_holidays(year)), dtype='datetime64[D]')
+    daily_weekdays[np.isin(days_of_year, holiday_dates)] = 7
 
     # Building-specific coefficients and weekday factors (table is read once per process)
     (h_A, h_B, h_C, h_D, mH, bH, mW, bW), weekday_factors = _profile_parameters(profile_type + subtype)
