@@ -26,6 +26,13 @@ All notable changes to this project will be documented in this file.
 - `benchmarks/bench_calculate.py` for wall-clock measurements
 - Documentation: new section *Performance and caching* in
   `docs/DOCUMENTATION.md` (memory use, invalidation, thread safety)
+- README: section *Known issues* (leap years with 8760-hour weather files,
+  profile type `GMF`, `peak_design_kW` without `design_temperature`, different
+  time steps of the two modules)
+
+### Fixed
+- README: the demo scripts take the weather file as `--try-file`, not as a
+  positional argument
 
 ## [0.3.0] — 2026-03-26
 
