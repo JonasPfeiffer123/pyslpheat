@@ -26,7 +26,8 @@ Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 
    - [Parameters](#parameters)
    - [Day-type classification](#day-type-classification)
 4. [TRY weather data](#try-weather-data)
-5. [References](#references)
+5. [Performance and caching](#performance-and-caching)
+6. [References](#references)
 
 ---
 
@@ -502,6 +503,77 @@ Split rule: first 6 digits = latitude (2 integer + 4 decimal), last 6 digits =
 longitude (2 integer + 4 decimal).
 
 > **Climate zone:** Bautzen is in DWD climate zone **9** (central/eastern Germany).
+
+---
+
+## Performance and caching
+
+`calculate()` is usually called once per building, with the same weather file
+for all buildings. Everything that does not depend on the building is
+therefore loaded once per process and reused by later calls. Results are
+identical to those of version 0.3.0; only the runtime changed.
+
+### Timings
+
+Per call, wall clock, same weather file for all calls
+(Windows 11, Python 3.12, numpy 2.3, pandas 2.3):
+
+| | 0.3.0 | 0.4.0, first call in a process | 0.4.0, later calls |
+|---|---|---|---|
+| `bdew_calculate` | ≈ 28 ms | ≈ 27 ms | ≈ 1.6 ms |
+| `vdi4655_calculate` | ≈ 115 ms | ≈ 35 ms | ≈ 2.4 ms |
+| `bdew_calculate(stochastic=True)` | ≈ 185 ms | – | ≈ 4.5 ms |
+| `bdew_calculate(dhw_draw_events=True)` | ≈ 45 ms | – | ≈ 9 ms |
+
+Reproduce with `python benchmarks/bench_calculate.py`.
+
+### What is cached
+
+| Data | Cached per | Memory |
+|---|---|---|
+| TRY weather file, BDEW module (temperature) | file | ≈ 70 kB per file |
+| TRY weather file, VDI 4655 module (five arrays) | file | ≈ 350 kB per file |
+| BDEW daily coefficients and weekday factors | process | ≈ 20 kB |
+| BDEW hourly factor tables (all 14 profile types) | process | ≈ 0.3 MB |
+| VDI 4655 daily factors (`Faktoren.csv`) | process | < 0.1 MB |
+| VDI 4655 load profiles (up to 20 files) | process | ≈ 50 kB |
+
+With one weather file this adds up to roughly 1 MB. Each module keeps the
+eight most recently used weather files, so the upper bound is about 4 MB.
+
+### Invalidation
+
+- **Weather files** are identified by their absolute path. A cached file is
+  used as long as its modification time and size are unchanged; otherwise it
+  is read again on the next call. A file that is rewritten with the same size
+  *and* the same modification time is not noticed.
+- **Bundled tables** (`data/bdew/`, `data/vdi4655/`) are read once and kept
+  until the process ends. After editing these CSV files, restart the process
+  or call `clear_caches()`.
+- `pyslpheat.clear_caches()` drops everything; the next call loads it again.
+
+```python
+import pyslpheat
+
+pyslpheat.clear_caches()
+```
+
+### Safe use of results
+
+Cached arrays are read-only and never handed out. `calculate()` returns a
+newly built DataFrame on every call, and `import_TRY()` returns copies, so
+callers may modify whatever they receive without affecting later calls.
+
+### Threads and processes
+
+`calculate()` may be called from any thread, for example from a `QThread`
+in a GUI application, and from several threads at once. Cache bookkeeping is
+protected by a lock, and cached data is never modified after it has been
+stored. If several threads make the very first call at the same moment, a
+file may be parsed more than once; the results are the same.
+
+The caches live in the process. Worker processes (`multiprocessing`) each
+build their own on first use.
 
 ---
 

@@ -96,6 +96,14 @@ from pyslpheat import TRY_BAUTZEN_2045, TRY_BAUTZEN_2045_WINTER, TRY_BAUTZEN_204
 Additional TRY files are available from
 [DWD / BBSR](https://www.bbsr.bund.de/BBSR/DE/forschung/programme/zb/Auftragsforschung/5EnergieKlimaBauen/2013/testreferenzjahre/01-start.html).
 
+## Performance
+
+Weather files and the bundled coefficient tables are cached per process, so
+calling `calculate()` once per building is cheap: after the first call about
+1.6 ms per building for BDEW and 2.4 ms for VDI 4655. Memory use, invalidation
+and thread safety are described in
+[Performance and caching](docs/DOCUMENTATION.md#performance-and-caching).
+
 ## Documentation
 
 Full API reference: [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)
