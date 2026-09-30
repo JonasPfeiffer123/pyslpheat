@@ -3,6 +3,7 @@ The lookup tables built from the bundled CSV files must answer exactly like
 the pandas merges and row filters they replace.
 """
 
+import glob
 import logging
 import os
 
@@ -122,3 +123,17 @@ def test_unknown_climate_zone_warns_once_per_day(caplog):
     messages = [r.getMessage() for r in caplog.records if "No factors found" in r.getMessage()]
     assert len(messages) == 365
     assert messages[0].startswith("No factors found for profile day EFH99W")
+
+
+def test_profile_files_list_every_interval_once():
+    files = sorted(glob.glob(os.path.join(vdi4655._VDI4655_DATA_DIR, "load_profiles", "*.csv")))
+    assert len(files) == 20
+    for path in files:
+        times = pd.read_csv(path, sep=";")["Zeit"].dropna()
+        assert times.tolist() == vdi4655._PROFILE_TIMES, os.path.basename(path)
+
+
+def test_loaded_profiles_are_read_only():
+    profile = vdi4655._load_profile("EFHWWH")
+    assert profile.shape == (3, 96)
+    assert not profile.flags.writeable
