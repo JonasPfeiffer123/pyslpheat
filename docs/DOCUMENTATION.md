@@ -534,7 +534,7 @@ Reproduce with `python benchmarks/bench_calculate.py`.
 | TRY weather file, BDEW module (temperature) | file | ≈ 70 kB per file |
 | TRY weather file, VDI 4655 module (five arrays) | file | ≈ 350 kB per file |
 | BDEW daily coefficients and weekday factors | process | ≈ 20 kB |
-| BDEW hourly factor tables (all 14 profile types) | process | ≈ 0.3 MB |
+| BDEW hourly factor tables (all 14 profile types) | process | ≈ 0.2 MB |
 | VDI 4655 daily factors (`Faktoren.csv`) | process | < 0.1 MB |
 | VDI 4655 load profiles (up to 20 files) | process | ≈ 50 kB |
 
