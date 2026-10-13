@@ -141,10 +141,14 @@ The outer classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C"
 and "Temp. > 25 °C"). Hours below −17.5 °C therefore get the factors of the
 −17.5 °C class, hours at or above 27.5 °C those of the 27.5 °C class.
 
-Because every hour uses its own temperature, the 24 factors of a day add up to
-exactly 100 % only when the temperature is the same in every hour of the day;
-see the known issues in the README. Up to 0.4.2 the interpolation had the
-wrong sign and hours outside the table got no load (see the changelog).
+Because every hour uses its own temperature, the 24 interpolated factors of a
+day add up to exactly 100 % only when the temperature is the same in every hour
+of the day. They are therefore scaled to 100 % per day, so the hourly loads of
+a day always add up to its daily demand from the SigLinDe function.
+
+Up to 0.4.2 the interpolation had the wrong sign and hours outside the table
+got no load; up to 0.4.3 the daily sums of the factors were not scaled (see
+the changelog).
 
 ---
 

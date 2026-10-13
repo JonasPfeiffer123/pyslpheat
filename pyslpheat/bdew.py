@@ -842,6 +842,12 @@ def calculate(annual_heat_kWh: Optional[float],
         (upper_limit - factor_temperature) / 5
     )
 
+    # Each hour interpolates at its own temperature, so the 24 factors of a day add
+    # up to 100 % only if the temperature is the same in every hour. Scale them per
+    # day so that every day keeps exactly its daily demand
+    daily_factor_sum = hour_factor_interpolation.reshape(-1, 24).sum(axis=1)
+    hour_factor_interpolation = hour_factor_interpolation * np.repeat(100 / daily_factor_sum, 24)
+
     # Calculate hourly heat demands
     hourly_heat_demand_heating = np.nan_to_num(
         (hourly_daily_heat_demand_heating * hour_factor_interpolation) / 100
