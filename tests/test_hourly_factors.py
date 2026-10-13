@@ -1,12 +1,16 @@
 """
-BDEW hourly factors: interpolation between the temperature classes and hours
-outside the tabulated range.
+BDEW hourly factors: interpolation between the temperature classes, hours
+outside the tabulated range and the daily energy.
 
 The hourly factors are tabulated for the class centres -17.5 to 27.5 °C. Each
 hour interpolates linearly between the two centres around its temperature. Up
 to 0.4.2 the interpolation had the wrong sign: at the lower centre it gave
 2·F(upper) − F(lower), so the factor jumped at every centre and could become
 negative.
+
+As every hour uses its own temperature, the 24 interpolated factors of a day
+add up to 100 % only at a constant temperature. Since 0.4.4 they are scaled to
+100 % per day, so every day keeps its daily demand.
 
 The outer classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C" and
 "Temp. > 25 °C"), so colder and warmer hours take the factors of the outer
@@ -44,25 +48,35 @@ RTOL = 1e-9
 
 
 @pytest.fixture(scope="module")
-def constant_try(tmp_path_factory):
-    """Return a function writing a TRY file with one temperature in every hour."""
-    with open(pyslpheat.TRY_BAUTZEN_2015, "r", encoding="latin-1", newline="") as fh:
-        lines = fh.readlines()
-    start = next(i for i, line in enumerate(lines) if line.strip().startswith("***")) + 1
+def write_try(tmp_path_factory):
+    """Return a function writing a copy of a TRY file with other hourly temperatures."""
     directory = tmp_path_factory.mktemp("try")
 
-    def write(temperature):
+    def write(name, temperatures, source=pyslpheat.TRY_BAUTZEN_2015):
+        path = directory / f"{name}.dat"
+        if path.exists():
+            return str(path)
+        with open(source, "r", encoding="latin-1", newline="") as fh:
+            lines = fh.readlines()
+        start = next(i for i, line in enumerate(lines) if line.strip().startswith("***")) + 1
+        assert len(lines) - start == len(temperatures)
         data = []
-        for line in lines[start:]:
+        for line, temperature in zip(lines[start:], temperatures):
             parts = line.split()
             parts[5] = f"{temperature:.1f}"
             data.append(" ".join(parts) + "\n")
-        path = directory / f"TRY_constant_{temperature:+.1f}.dat"
         with open(path, "w", encoding="latin-1", newline="") as fh:
             fh.writelines(lines[:start] + data)
         return str(path)
 
     return write
+
+
+@pytest.fixture(scope="module")
+def constant_try(write_try):
+    """Return a function writing a TRY file with one temperature in every hour."""
+    return lambda temperature: write_try(f"TRY_constant_{temperature:+.1f}",
+                                         np.full(8760, temperature))
 
 
 @pytest.fixture(scope="module")
@@ -156,3 +170,25 @@ def test_bundled_weather_hours_beyond_the_table_have_load(profile_type):
     assert (df["Q_heat_kWh"].values[beyond] > 0).all()
     assert (df["Q_dhw_kWh"].values[beyond] > 0).all()
     assert df["Q_total_kWh"].sum() == pytest.approx(ANNUAL_kWh, rel=RTOL)
+
+
+# ── Daily energy ─────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("try_file", ["2015", "2045_summer"])
+@pytest.mark.parametrize("profile_type", PROFILE_TYPES)
+def test_daily_energy_depends_only_on_the_daily_mean(profile_type, try_file, write_try):
+    # The daily demand follows from the daily mean temperatures. Up to 0.4.3 the
+    # hourly split changed it: the 24 interpolated factors of a day did not add
+    # up to 100 % when the temperature changed during the day
+    hourly = bdew.import_TRY(BUNDLED_TRY[try_file])[0]
+    daily_mean = np.round(bdew.calculate_daily_averages(hourly), 1)
+    flat = write_try(f"TRY_daily_mean_{try_file}", np.repeat(daily_mean, 24),
+                     source=BUNDLED_TRY[try_file])
+
+    varying = _bdew(profile_type, BUNDLED_TRY[try_file])
+    constant_per_day = _bdew(profile_type, flat)
+
+    for column in ("Q_heat_kWh", "Q_dhw_kWh"):
+        np.testing.assert_allclose(varying[column].values.reshape(-1, 24).sum(axis=1),
+                                   constant_per_day[column].values.reshape(-1, 24).sum(axis=1),
+                                   rtol=1e-12, err_msg=column)
