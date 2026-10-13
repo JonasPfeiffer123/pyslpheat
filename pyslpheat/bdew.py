@@ -836,9 +836,10 @@ def calculate(annual_heat_kWh: Optional[float],
     hour_factor_T1 = _hourly_factors(profile_type, daily_weekdays, lower_limit)
     hour_factor_T2 = _hourly_factors(profile_type, daily_weekdays, upper_limit)
 
-    # Perform linear interpolation between temperature bounds
+    # Perform linear interpolation between temperature bounds: the factor of the
+    # upper bound at upper_limit, that of the lower bound at lower_limit
     hour_factor_interpolation = hour_factor_T2 + (hour_factor_T1 - hour_factor_T2) * (
-        (factor_temperature - upper_limit) / 5
+        (upper_limit - factor_temperature) / 5
     )
 
     # Calculate hourly heat demands
