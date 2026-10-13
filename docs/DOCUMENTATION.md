@@ -101,30 +101,65 @@ df["Q_total_kWh"].max()   # → design peak load
 
 ### Profile types
 
-All valid `profile_type` / `subtype` combinations, sourced directly from `data/bdew/daily_coefficients.csv`:
+All valid `profile_type` / `subtype` combinations, sourced directly from
+`data/bdew/daily_coefficients.csv`. The descriptions follow the nomenclature of
+the BDEW/VKU/GEODE guideline (Anlage 2a "Nomenklatur für Standardlastprofile"):
 
 | `profile_type` | Available `subtype` values | Description |
 |---|---|---|
-| `"HEF"` | `"03"` `"04"` `"05"` `"33"` `"34"` | Single-family residential |
-| `"HMF"` | `"03"` `"04"` `"05"` `"33"` `"34"` | Multi-family residential |
-| `"GKO"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Small commercial / public buildings |
-| `"GHA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Retail trade |
-| `"GMK"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Metal working / automotive |
-| `"GBD"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Office services |
-| `"GBH"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Accommodation / hotels |
-| `"GWA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Laundry / textile |
-| `"GGA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Catering / restaurants |
-| `"GBA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Bakeries |
-| `"GGB"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Wholesale trade / distribution |
-| `"GPD"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Paper / printing |
-| `"GMF"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Mixed / miscellaneous commercial |
-| `"GHD"` | `"03"` `"04"` `"33"` `"34"` | General commercial aggregate (Gewerbe/Handel/Dienstleistungen) |
+| `"HEF"` | `"03"` `"04"` `"05"` `"33"` `"34"` | Single-family house (Einfamilienhaus) |
+| `"HMF"` | `"03"` `"04"` `"05"` `"33"` `"34"` | Multi-family house (Mehrfamilienhaus) |
+| `"GKO"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Public authorities, banks and insurers, non-profit organisations (Gebietskörperschaften, Kreditinstitute und Versicherungen, Organisationen ohne Erwerbszweck) |
+| `"GHA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Retail and wholesale trade (Einzel- und Großhandel) |
+| `"GMK"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Metal and motor vehicles (Metall und Kfz) |
+| `"GBD"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Other business services (sonstige betriebliche Dienstleistungen) |
+| `"GBH"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Accommodation (Beherbergung) |
+| `"GWA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Laundries (Wäscherei) |
+| `"GGA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Restaurants and bars (Gaststätten) |
+| `"GBA"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Bakeries and confectioneries (Bäckerei und Konditorei) |
+| `"GGB"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Horticulture (Gartenbau) |
+| `"GPD"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Paper and printing (Papier und Druck) |
+| `"GMF"` | `"01"` `"02"` `"03"` `"04"` `"05"` `"33"` `"34"` | Household-like businesses (haushaltsähnliche Gewerbebetriebe) |
+| `"GHD"` | `"03"` `"04"` `"33"` `"34"` | Aggregate profile for trade, commerce and services (Summenlastprofil Gewerbe/Handel/Dienstleistung) |
 
-**Subtype numbering convention:**
+**Subtype numbering** (guideline Anlage 2a, "Kennzeichnung der Ausprägung"):
 
-- `"01"`–`"05"` — five building variants ordered by increasing insulation quality (01 = lowest, 05 = best). Only available for commercial `G*` types; residential types start at `"03"`.
-- `"33"` / `"34"` — variants with an additional **linear temperature correction** on top of the sigmoid (non-zero `mH`, `bH`, `mW`, `bW` coefficients). Use these for buildings where heat demand also has a significant linear dependence on outside temperature, e.g. poorly sealed industrial halls.
-- `"GHD"` only has subtypes `"03"`, `"04"`, `"33"`, `"34"` — the `"01"`, `"02"`, `"05"` variants are not defined in the BDEW guideline for this aggregate type.
+| Digit | Value | Meaning |
+|---|---|---|
+| first | `0` | Sigmoid profile of TU München (the original profiles) |
+| first | `3` | SigLinDe profile of FfE (2015): sigmoid plus a linear part (non-zero `mH`, `bH`, `mW`, `bW`) |
+| second | `1` / `2` | high / increased share of process gas (commercial `G*` types only) |
+| second | `3` / `4` / `5` | medium / increased / high share of heating gas |
+
+"Mit aufsteigenden Zahlen nimmt die Temperaturabhängigkeit des Verbrauchs zu
+und der Anteil des Prozessgases ab": the higher the second digit, the more the
+demand depends on the outside temperature. The digit describes this share of
+temperature-dependent demand, not the insulation standard of the building. A
+building with little space heating compared with its hot water demand, such as
+a well-insulated new building, has a less temperature-dependent demand and so
+fits a lower digit rather than `05`.
+
+**Choosing a subtype:**
+
+- `"33"` / `"34"` (SigLinDe) correct the systematic error of the pure sigmoid
+  profiles at cold temperatures, which for many network operators led to
+  increased "Unterspeisung" (guideline, section 2.2). The sigmoid flattens out
+  in the cold: from −12.4 to −15 °C the daily factor h(ϑ) of `HMF03` rises by
+  2.0 %, that of `HMF34` by 5.9 % (`HEF03` 3.0 %, `HEF34` 6.6 %). For
+  households the guideline lists `HEF33`, `HEF34`, `HMF33` and `HMF34` as the
+  profiles recommended for use.
+- SigLinDe was developed only for the variants `03` and `04`. `"05"` exists only
+  as a sigmoid profile; for households it was introduced in 2013 and has not
+  been developed further.
+- `"01"` / `"02"` exist only for the commercial `G*` types, whose demand can
+  include process gas.
+- `"GHD"` only has subtypes `"03"`, `"04"`, `"33"`, `"34"`.
+- Where measured loads are available, the guideline describes checking the
+  chosen variant against them (section 5.1.1 "Überprüfung der
+  SLP-Ausprägung"), above all in the cold temperature range.
+
+Sections and quotations were checked against the guideline edition of
+30.06.2016 (Anlage 2a on p. 117 f., section 2.2 on p. 14 f.).
 
 ---
 

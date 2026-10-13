@@ -255,7 +255,7 @@ def get_coefficients(profile_type: str,
 
     :param profile_type: BDEW building type (GKO, GHA, GMK, GBD, GBH, GWA, GGA, GBA, GGB, GPD, GMF, GHD)
     :type profile_type: str
-    :param subtype: Building subtype for detailed classification
+    :param subtype: Profile variant ("Ausprägung"), e.g. ``'03'`` or ``'34'``
     :type subtype: str
     :param daily_data: BDEW daily coefficients DataFrame
     :type daily_data: pd.DataFrame
@@ -306,7 +306,7 @@ def get_weekday_factor(daily_weekdays: np.ndarray,
     :type daily_weekdays: np.ndarray
     :param profile_type: BDEW building type
     :type profile_type: str
-    :param subtype: Building subtype
+    :param subtype: Profile variant ("Ausprägung"), e.g. ``'03'`` or ``'34'``
     :type subtype: str
     :param daily_data: BDEW coefficients DataFrame with weekday columns '1'-'7'
     :type daily_data: pd.DataFrame
@@ -580,7 +580,9 @@ def calculate(annual_heat_kWh: Optional[float],
     :type annual_heat_kWh: Optional[float]
     :param profile_type: BDEW building type (GKO, GHA, GMK, etc.)
     :type profile_type: str
-    :param subtype: Building subtype
+    :param subtype: Profile variant ("Ausprägung"): first digit 0 = sigmoid (TU München),
+        3 = SigLinDe (FfE); second digit 1/2 = high/increased process gas share,
+        3/4/5 = medium/increased/high heating gas share. E.g. ``'03'`` or ``'34'``
     :type subtype: str
     :param TRY_file_path: Path to Test Reference Year weather data with 8760 hourly
         values; for a leap year 8784, or 8760 and 29 February repeats 28 February
