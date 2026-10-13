@@ -41,18 +41,18 @@ TRY_OPTIONS = {
 BDEW_PROFILE_TYPES = {
     "HEF – Einfamilienhaus": "HEF",
     "HMF – Mehrfamilienhaus": "HMF",
-    "GKO – Büro/Verwaltung": "GKO",
-    "GHA – Handel": "GHA",
+    "GKO – Gebietskörperschaften, Banken, Versicherungen": "GKO",
+    "GHA – Einzel- und Großhandel": "GHA",
     "GMK – Metall/Kfz": "GMK",
-    "GBD – Bäckerei/Konditorei": "GBD",
+    "GBD – sonstige betriebliche Dienstleistungen": "GBD",
     "GBH – Beherbergung": "GBH",
     "GWA – Wäscherei": "GWA",
     "GGA – Gaststätten": "GGA",
-    "GBA – Bäder": "GBA",
+    "GBA – Bäckerei/Konditorei": "GBA",
     "GGB – Gartenbau": "GGB",
     "GPD – Papier/Druck": "GPD",
-    "GMF – Mischnutzung": "GMF",
-    "GHD – Handel/Dienstleistungen gesamt": "GHD",
+    "GMF – haushaltsähnliches Gewerbe": "GMF",
+    "GHD – Gewerbe/Handel/Dienstleistung gesamt": "GHD",
 }
 
 BDEW_SUBTYPES = {
@@ -69,17 +69,19 @@ BDEW_SUBTYPES = {
     "GGB": ["01", "02", "03", "04", "05", "33", "34"],
     "GPD": ["01", "02", "03", "04", "05", "33", "34"],
     "GMF": ["01", "02", "03", "04", "05", "33", "34"],
-    "GHD": ["03", "04", "05", "33", "34"],
+    "GHD": ["03", "04", "33", "34"],
 }
 
+# BDEW guideline, Anlage 2a: first digit 0 = sigmoid (TU München), 3 = SigLinDe (FfE);
+# second digit = share of process / heating gas, i.e. temperature dependence
 SUBTYPE_LABELS = {
-    "01": "01 – sehr gut gedämmt (Niedrigenergiehaus)",
-    "02": "02 – gut gedämmt",
-    "03": "03 – mittlerer Standard",
-    "04": "04 – gering gedämmt",
-    "05": "05 – sehr gering gedämmt (Altbau)",
-    "33": "33 – FfE-Methode, mittlerer Standard",
-    "34": "34 – FfE-Methode, gering gedämmt",
+    "01": "01 – Sigmoid, hoher Prozessgasanteil",
+    "02": "02 – Sigmoid, erhöhter Prozessgasanteil",
+    "03": "03 – Sigmoid, mittlerer Heizgasanteil",
+    "04": "04 – Sigmoid, erhöhter Heizgasanteil",
+    "05": "05 – Sigmoid, hoher Heizgasanteil",
+    "33": "33 – SigLinDe, mittlerer Heizgasanteil",
+    "34": "34 – SigLinDe, erhöhter Heizgasanteil",
 }
 
 VDI_BUILDING_TYPES = {

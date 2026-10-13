@@ -178,7 +178,7 @@ BDEW shape unless explicitly requested:
 
 | Option | What it does |
 |---|---|
-| `subtype` | Selects the insulation/consumption class: `"03"` high (old stock), `"04"` medium, `"05"` low (new build); `"33"`/`"34"` are the SigLinDe variants with non-zero linear correction terms |
+| `subtype` | Selects the BDEW profile variant ("Ausprägung"). First digit: `0` sigmoid profile of TU München, `3` SigLinDe profile of FfE (sigmoid plus linear part, more accurate at cold temperatures). Second digit: share of temperature-dependent demand, from `1`/`2` (high/increased process gas share, commercial only) to `3`/`4`/`5` (medium/increased/high heating gas share); not the insulation standard. See [Profile types](docs/DOCUMENTATION.md#profile-types) |
 | `dhw_share` | Fixes the DHW fraction of the total annual demand, overriding the profile's natural split |
 | `dhw_flat` | Distributes DHW uniformly across 24 h (temperature- and weekday-independent) |
 | `heating_limit_temp` | Sets a Heizgrenztemperatur — space heating is zeroed on warm days; total energy is renormalized automatically |
