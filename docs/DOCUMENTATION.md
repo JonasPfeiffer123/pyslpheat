@@ -12,6 +12,7 @@ Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 
    - [Standard call](#standard-call)
    - [Return value](#return-value)
    - [Profile types](#profile-types)
+   - [Hourly factors](#hourly-factors)
    - [Configuration options](#configuration-options)
      - [DHW share](#dhw-share-dhw_share)
      - [Heating limit temperature](#heating-limit-temperature-heating_limit_temp)
@@ -124,6 +125,26 @@ All valid `profile_type` / `subtype` combinations, sourced directly from `data/b
 - `"01"`–`"05"` — five building variants ordered by increasing insulation quality (01 = lowest, 05 = best). Only available for commercial `G*` types; residential types start at `"03"`.
 - `"33"` / `"34"` — variants with an additional **linear temperature correction** on top of the sigmoid (non-zero `mH`, `bH`, `mW`, `bW` coefficients). Use these for buildings where heat demand also has a significant linear dependence on outside temperature, e.g. poorly sealed industrial halls.
 - `"GHD"` only has subtypes `"03"`, `"04"`, `"33"`, `"34"` — the `"01"`, `"02"`, `"05"` variants are not defined in the BDEW guideline for this aggregate type.
+
+---
+
+### Hourly factors
+
+The daily heat demand is split into 24 hours with the BGW hourly factors
+(`data/bdew/hourly_coefficients.csv`), which depend on the profile type, the
+weekday and the outside temperature. They are tabulated for ten temperature
+classes of 5 K, stored under their centres −17.5, −12.5, … 27.5 °C. Each hour
+interpolates linearly between the factors of the two class centres around its
+hourly temperature; at a class centre it takes that class's factors.
+
+The outer classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C"
+and "Temp. > 25 °C"). Hours below −17.5 °C therefore get the factors of the
+−17.5 °C class, hours at or above 27.5 °C those of the 27.5 °C class.
+
+Because every hour uses its own temperature, the 24 factors of a day add up to
+exactly 100 % only when the temperature is the same in every hour of the day;
+see the known issues in the README. Up to 0.4.2 the interpolation had the
+wrong sign and hours outside the table got no load (see the changelog).
 
 ---
 
