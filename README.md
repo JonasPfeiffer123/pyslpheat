@@ -106,7 +106,7 @@ and thread safety are described in
 
 ## Known issues
 
-The golden-master tests pin the current behaviour of the first two items
+The golden-master tests pin the current behaviour of the first three items
 (`tests/golden_cases.py`), so fixing one of them shows up there as an intended
 change.
 
@@ -125,6 +125,15 @@ change.
   scaling (modes B and C) needs both values. If `annual_heat_kWh` and only
   `peak_design_kW` are given, the profile is scaled by annual energy alone and
   no warning is issued.
+- **BDEW: the hourly split does not keep the daily energy exactly.** Each
+  hour takes the hourly factors interpolated at its own temperature, while
+  each class of the table splits a whole day's energy. When the temperature
+  changes during the day, the 24 factors of the day no longer add up to
+  100 %, and the final scaling to the annual energy spreads the difference
+  over the year. With the 2015 Bautzen year file and the year 2023 the daily
+  sums range from 98 % to 105 % for `HEF` and from 70 % to 104 % for `GWA`.
+  Fixing this, e.g. by scaling each day's factors to 100 %, changes results
+  for every year.
 - **The two modules return different time steps.** BDEW profiles are hourly
   (8760 values), VDI 4655 profiles quarter-hourly (35 040 values). They cannot
   be stacked into one array without resampling.

@@ -795,16 +795,23 @@ def calculate(annual_heat_kWh: Optional[float],
             shaped = np.maximum(daily_heat_demand_heating, 0.0) ** heating_exponent
             daily_heat_demand_heating = shaped * (h_sum / shaped.sum())
 
-    # Process hourly temperature data for interpolation
-    hourly_reference_temperature = np.round((hourly_temperature + 2.5) * 2, -1) / 2 - 2.5
+    # Hourly factors are tabulated for the class centres -17.5 ... 27.5 °C. The outer
+    # classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C" and
+    # "Temp. > 25 °C"), so colder and warmer hours take the factors of the outer
+    # centres instead of falling outside the table, where they would get no load
+    factor_temperature = np.clip(hourly_temperature, -17.5, 27.5)
 
-    # Calculate temperature bounds for interpolation
+    # Process hourly temperature data for interpolation
+    hourly_reference_temperature = np.round((factor_temperature + 2.5) * 2, -1) / 2 - 2.5
+
+    # Calculate temperature bounds for interpolation; at 27.5 °C the bounds are
+    # 22.5 and 27.5 °C, as there is no class above
     hourly_reference_temperature_2 = np.where(
-        hourly_reference_temperature > hourly_temperature,
+        hourly_reference_temperature > factor_temperature,
         hourly_reference_temperature - 5,
         np.where(
-            hourly_reference_temperature > 27.5,
-            27.5,
+            hourly_reference_temperature >= 27.5,
+            22.5,
             hourly_reference_temperature + 5
         )
     )
@@ -829,9 +836,10 @@ def calculate(annual_heat_kWh: Optional[float],
     hour_factor_T1 = _hourly_factors(profile_type, daily_weekdays, lower_limit)
     hour_factor_T2 = _hourly_factors(profile_type, daily_weekdays, upper_limit)
 
-    # Perform linear interpolation between temperature bounds
+    # Perform linear interpolation between temperature bounds: the factor of the
+    # upper bound at upper_limit, that of the lower bound at lower_limit
     hour_factor_interpolation = hour_factor_T2 + (hour_factor_T1 - hour_factor_T2) * (
-        (hourly_temperature - upper_limit) / 5
+        (upper_limit - factor_temperature) / 5
     )
 
     # Calculate hourly heat demands
