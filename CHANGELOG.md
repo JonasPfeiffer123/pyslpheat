@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.5] — 2026-10-13
+
+### Fixed
+- GUI: the labels of GBD ("Bäckerei/Konditorei") and GBA ("Bäder") were
+  wrong; GBA is the bakery profile, GBD other business services. The labels
+  of GKO, GHA, GMF and GHD follow the guideline's nomenclature
+- GUI: profile type GHD offered subtype 05, which does not exist and failed
+  with `ValueError`
+- GUI: subtype labels described the second digit as insulation standard
+  (e.g. "05 – sehr gering gedämmt (Altbau)"); they now name the profile
+  family and the process or heating gas share
+
+### Documentation
+- Subtypes in docs, README and docstrings: the second digit was described as
+  insulation standard (03 old stock … 05 new build) and 33/34 as a special case
+  for poorly sealed halls. According to the BDEW/VKU/GEODE guideline
+  (Anlage 2a) the first digit separates the sigmoid profiles of TU München
+  (0x) from the SigLinDe profiles of FfE (3x); the second digit gives the
+  share of process or heating gas (1/2 high/increased process gas, 3/4/5
+  medium/increased/high heating gas), i.e. how temperature-dependent the
+  demand is. 33/34 are the newer standard profiles that correct the error of
+  the sigmoid at cold temperatures
+- docs: profile type descriptions follow the guideline; GGB is horticulture
+  (was wholesale trade), GMF household-like businesses (was mixed
+  commercial), GKO public authorities, banks, insurers and non-profit
+  organisations, GBD other business services
+- docs: guidance on choosing a subtype
+
+Coefficients and results are unchanged.
+
 ## [0.4.4] — 2026-10-13
 
 ### Fixed
