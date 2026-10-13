@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3] — 2026-10-13
+
+### Fixed
+- BDEW: the hourly factors are interpolated between the two temperature
+  classes around an hour with the correct sign. The weight was
+  `(T − upper) / 5` instead of `(upper − T) / 5`, so at the lower class centre
+  the factor was `2·F(upper) − F(lower)` instead of `F(lower)`. It jumped at
+  every class centre, left the range of the tabulated values and could become
+  negative: with the 2015 Bautzen year file, 644 hours over the 14 profile
+  types (subtype 03) had a negative load, 13 of them for HEF03
+- BDEW: hours colder than −17.5 °C or at 27.5 °C and above no longer get zero
+  load. The hourly factors are tabulated for the class centres −17.5 to
+  27.5 °C; such hours found no factor, their space heating and DHW became 0
+  and their energy went to the other hours of the year. At a constant −20 °C
+  the whole demand was 0. The limit at 27.5 °C in the code did not take
+  effect. The outer classes are open-ended (BGW P 2006/8, table 10:
+  "Temp. <= -15 °C" and "Temp. > 25 °C"), so these hours now get the factors
+  of the −17.5 °C or the 27.5 °C class. Hours affected in the bundled Bautzen
+  files (below −17.5 °C / at or above 27.5 °C): 2015 year 0 / 26,
+  2015 summer 11 / 230, 2015 winter 11 / 84, 2045 year 0 / 102,
+  2045 summer 0 / 249, 2045 winter 0 / 89
+
+Both fixes change every BDEW result, also the daily energies (see the known
+issue on daily sums in the README); the annual energy is unchanged. With the
+bundled files (14 profile types, subtype 03, year 2023) the
+annual maximum of the hourly load moves by −28 % to +16 % compared with
+0.4.2, with the 2015 year file e.g. HEF03 −2.5 %, HMF03 −1.6 %, GKO03 −10 %,
+GBD03 −24 %. No hour has a negative load any more.
+
+### Documentation
+- docs: section "Hourly factors" on the interpolation, the temperature
+  classes and the hours outside them
+- README: known issue that the hourly factors of a day do not add up to
+  100 % when the temperature changes during the day
+
 ## [0.4.2] — 2026-09-30
 
 ### Added
