@@ -34,7 +34,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_dhw_share": {
       "status": "ok",
@@ -61,7 +62,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GKO03_2023": {
       "status": "ok",
@@ -88,7 +90,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HEF03_2021": {
       "status": "ok",
@@ -115,7 +118,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HEF33_2023": {
       "status": "ok",
@@ -142,7 +146,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GKO34_2023_dhw_share": {
       "status": "ok",
@@ -169,7 +174,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GMF03_2023": {
       "status": "ok",
@@ -197,7 +203,7 @@
           "key": "bdew_GBD03_2023::temperature_C"
         }
       },
-      "note": "Re-recorded for 0.4.1: three hourly factors with a decimal comma in hourly_coefficients.csv were corrected; the case raised ValueError before."
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2023_dhs_call": {
       "status": "ok",
@@ -224,7 +230,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_dhs_call_defaults": {
       "status": "ok",
@@ -251,7 +258,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2023_heating_limit": {
       "status": "ok",
@@ -278,7 +286,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_heating_exponent": {
       "status": "ok",
@@ -305,7 +314,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_exponent_limit_share": {
       "status": "ok",
@@ -332,7 +342,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_dhw_flat": {
       "status": "ok",
@@ -359,7 +370,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_dhw_share_invalid": {
       "status": "ok",
@@ -386,7 +398,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_dhw_share_nan": {
       "status": "ok",
@@ -413,7 +426,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GKO03_2023_mode_b": {
       "status": "ok",
@@ -440,7 +454,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GKO03_2023_mode_c": {
       "status": "ok",
@@ -467,7 +482,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HEF33_2023_mode_c_limit_share": {
       "status": "ok",
@@ -494,7 +510,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_stochastic": {
       "status": "ok",
@@ -521,7 +538,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2023_stochastic_custom": {
       "status": "ok",
@@ -548,7 +566,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2023_draw_events": {
       "status": "ok",
@@ -575,7 +594,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HEF03_2023_stochastic_draw_events": {
       "status": "ok",
@@ -602,7 +622,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2023_try2045_winter": {
       "status": "ok",
@@ -629,7 +650,8 @@
         "temperature_C": {
           "key": "bdew_GBD03_2023_try2045_winter::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2024_try8760": {
       "status": "ok",
@@ -654,10 +676,10 @@
           ]
         },
         "temperature_C": {
-          "key": "bdew_GBD03_2024_leap::temperature_C"
+          "key": "bdew_GBD03_2024_try8760::temperature_C"
         }
       },
-      "note": "Re-recorded for 0.4.2: leap years accept 8760-hour weather files (29 February repeats 28 February); the case raised ValueError before."
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_GBD03_2024_leap": {
       "status": "ok",
@@ -682,9 +704,10 @@
           ]
         },
         "temperature_C": {
-          "key": "bdew_GBD03_2024_leap::temperature_C"
+          "key": "bdew_GBD03_2024_try8760::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_HMF03_2024_leap_stochastic_draw_events": {
       "status": "ok",
@@ -709,9 +732,10 @@
           ]
         },
         "temperature_C": {
-          "key": "bdew_GBD03_2024_leap::temperature_C"
+          "key": "bdew_GBD03_2024_try8760::temperature_C"
         }
-      }
+      },
+      "note": "Re-recorded for 0.4.3: the hourly factors are interpolated between the temperature classes with the correct sign (before: extrapolated, with a jump at every class centre and some negative loads), and hours below -17.5 °C and at or above 27.5 °C take the factors of the outer classes (before: no load)."
     },
     "bdew_unknown_profile": {
       "status": "error",
