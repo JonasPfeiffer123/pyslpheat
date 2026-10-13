@@ -1,14 +1,23 @@
 """
-BDEW hourly factors outside the tabulated temperature range.
+BDEW hourly factors: interpolation between the temperature classes and hours
+outside the tabulated range.
 
-The hourly factors are tabulated for the class centres -17.5 to 27.5 °C. The
-outer classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C" and
+The hourly factors are tabulated for the class centres -17.5 to 27.5 °C. Each
+hour interpolates linearly between the two centres around its temperature. Up
+to 0.4.2 the interpolation had the wrong sign: at the lower centre it gave
+2·F(upper) − F(lower), so the factor jumped at every centre and could become
+negative.
+
+The outer classes are open-ended (BGW P 2006/8, table 10: "Temp. <= -15 °C" and
 "Temp. > 25 °C"), so colder and warmer hours take the factors of the outer
 centres. Up to 0.4.2 such hours found no factor and got no load at all; their
 energy went to the other hours of the year.
 """
 
+import os
+
 import numpy as np
+import pandas as pd
 import pytest
 
 import pyslpheat
@@ -18,6 +27,18 @@ PROFILE_TYPES = ["HEF", "HMF", "GKO", "GHA", "GMK", "GBD", "GBH",
                  "GWA", "GGA", "GBA", "GGB", "GPD", "GMF", "GHD"]
 # GMK, GWA, GBA and GGB have hours with a tabulated factor of 0 at 27.5 °C
 WITHOUT_ZERO_FACTORS = [p for p in PROFILE_TYPES if p not in ("GMK", "GWA", "GBA", "GGB")]
+BUNDLED_TRY = {
+    "2015": pyslpheat.TRY_BAUTZEN_2015,
+    "2015_winter": pyslpheat.TRY_BAUTZEN_2015_WINTER,
+    "2015_summer": pyslpheat.TRY_BAUTZEN_2015_SUMMER,
+    "2045": pyslpheat.TRY_BAUTZEN_2045,
+    "2045_winter": pyslpheat.TRY_BAUTZEN_2045_WINTER,
+    "2045_summer": pyslpheat.TRY_BAUTZEN_2045_SUMMER,
+}
+HOURLY_COEFFICIENTS = os.path.join(os.path.dirname(bdew.__file__),
+                                   "data", "bdew", "hourly_coefficients.csv")
+# 9 to 15 January 2023: one week without public holidays
+WEEK = slice(8, 15)
 ANNUAL_kWh = 10_000.0
 RTOL = 1e-9
 
@@ -44,8 +65,56 @@ def constant_try(tmp_path_factory):
     return write
 
 
+@pytest.fixture(scope="module")
+def tabulated():
+    """Return a function giving the 24 tabulated factors of one class, read from the CSV."""
+    table = pd.read_csv(HOURLY_COEFFICIENTS, delimiter=";")
+
+    def get(profile_type, weekday, temperature):
+        rows = table[(table["Typ"] == profile_type) & (table["Wochentag"] == weekday)
+                     & (table["Temperatur"] == temperature)].sort_values("Stunde")
+        assert list(rows["Stunde"]) == list(range(24))
+        return rows["Stundenfaktor"].values.astype(float)
+
+    return get
+
+
 def _bdew(profile_type, try_path):
     return bdew.calculate(ANNUAL_kWh, profile_type, "03", try_path, 2023)
+
+
+# ── Interpolation between the classes ────────────────────────────────────────
+
+@pytest.mark.parametrize("temperature", [-17.5, -16.0, -12.5, 0.0, 1.5, 12.5, 24.0, 27.5])
+@pytest.mark.parametrize("profile_type", PROFILE_TYPES)
+def test_constant_weather_interpolates_between_classes(
+        profile_type, temperature, constant_try, tabulated):
+    # At a constant temperature all hours of a day use the same interpolation
+    # weight, so the day's load is split like the interpolated factors
+    df = _bdew(profile_type, constant_try(temperature))
+    lower = min(np.floor((temperature + 17.5) / 5) * 5 - 17.5, 22.5)
+    weight = (temperature - lower) / 5
+    weekdays = bdew.generate_year_months_days_weekdays(2023)[3]
+    load = df["Q_total_kWh"].values.reshape(-1, 24)
+
+    for day in range(len(load))[WEEK]:
+        factors = ((1 - weight) * tabulated(profile_type, weekdays[day], lower)
+                   + weight * tabulated(profile_type, weekdays[day], lower + 5))
+        np.testing.assert_allclose(load[day] / load[day].sum(), factors / factors.sum(),
+                                   rtol=1e-12, atol=1e-15)
+
+
+@pytest.mark.parametrize("try_file", sorted(BUNDLED_TRY))
+@pytest.mark.parametrize("profile_type", PROFILE_TYPES)
+def test_bundled_weather_has_no_negative_load(profile_type, try_file):
+    # Up to 0.4.2 HEF03 had 13 hours with negative load with the 2015 year file
+    df = _bdew(profile_type, BUNDLED_TRY[try_file])
+
+    assert (df["Q_heat_kWh"] >= 0).all()
+    assert (df["Q_dhw_kWh"] >= 0).all()
+
+
+# ── Hours outside the table ──────────────────────────────────────────────────
 
 
 @pytest.mark.parametrize("temperature", [-30.0, -20.0, -17.6, 27.5, 27.6, 30.0, 35.0])
