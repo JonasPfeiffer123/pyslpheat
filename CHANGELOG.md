@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4] — 2026-10-13
+
+### Fixed
+- BDEW: the hourly loads of a day add up to its daily demand. Every hour
+  takes the hourly factors interpolated at its own temperature, while each
+  class of the table splits a whole day's energy. When the temperature
+  changed during the day, the 24 factors of the day no longer added up to
+  100 %, and the final scaling to the annual energy spread the difference
+  over the year: with the 2015 Bautzen year file the daily sums ranged from
+  98 % to 105 % for HEF and from 70 % to 104 % for GWA. The interpolated
+  factors are now scaled to 100 % per day
+
+This changes every BDEW result; the annual energy is unchanged. Compared with
+0.4.3 single days change by up to 43 % (GWA), the annual maximum of the hourly
+load with the bundled files (14 profile types, subtype 03, year 2023) by
+−3.6 % to +0.8 %.
+
+### Documentation
+- docs: section "Hourly factors" describes the scaling per day
+- README: known issue on the daily sums removed
+
 ## [0.4.3] — 2026-10-13
 
 ### Fixed
@@ -24,8 +45,8 @@ All notable changes to this project will be documented in this file.
   2015 summer 11 / 230, 2015 winter 11 / 84, 2045 year 0 / 102,
   2045 summer 0 / 249, 2045 winter 0 / 89
 
-Both fixes change every BDEW result, also the daily energies (see the known
-issue on daily sums in the README); the annual energy is unchanged. With the
+Both fixes change every BDEW result, also the daily energies (daily sums
+fixed in 0.4.4); the annual energy is unchanged. With the
 bundled files (14 profile types, subtype 03, year 2023) the
 annual maximum of the hourly load moves by −28 % to +16 % compared with
 0.4.2, with the 2015 year file e.g. HEF03 −2.5 %, HMF03 −1.6 %, GKO03 −10 %,
