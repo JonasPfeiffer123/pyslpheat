@@ -89,6 +89,11 @@ VDI_BUILDING_TYPES = {
     "MFH – Mehrfamilienhaus": "MFH",
 }
 
+VDI_RESOLUTIONS = {
+    "15 Minuten (VDI 4655)": "15min",
+    "1 Stunde (wie BDEW)": "1h",
+}
+
 
 # ── Worker-Threads ───────────────────────────────────────────────────────────
 
@@ -223,11 +228,12 @@ class PlotWidget(QWidget):
             ],
         )
 
-    def plot_vdi4655(self, df):
+    def plot_vdi4655(self, df, hourly=False):
         self._base_plot(
             df,
-            ylabel="Bedarf [kWh/15 min]",
-            title="VDI 4655 – Lastprofil (15-Minuten-Auflösung)",
+            ylabel="Bedarf [kWh/h]" if hourly else "Bedarf [kWh/15 min]",
+            title="VDI 4655 – Lastprofil ("
+                  + ("Stundenauflösung)" if hourly else "15-Minuten-Auflösung)"),
             columns_colors_labels=[
                 ("Q_total_kWh",       "#2c3e50", "Wärme gesamt"),
                 ("Q_heat_kWh",        "#e74c3c", "Raumwärme"),
@@ -537,6 +543,7 @@ class VDI4655Tab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._result = None
+        self._result_hourly = False
         self._worker = None
         self._build_ui()
 
@@ -579,6 +586,11 @@ class VDI4655Tab(QWidget):
 
         self.try_sel = TRYSelector()
         form.addRow("TRY-Datei:", self.try_sel)
+
+        self.resolution_combo = QComboBox()
+        for lbl, value in VDI_RESOLUTIONS.items():
+            self.resolution_combo.addItem(lbl, userData=value)
+        form.addRow("Auflösung:", self.resolution_combo)
 
         left_layout.addWidget(grp)
 
@@ -716,6 +728,7 @@ class VDI4655Tab(QWidget):
             "climate_zone":           self.climate_combo.currentText(),
             "TRY":                    self.try_sel.get_path(),
             "holidays":               self._get_holidays(),
+            "resolution":             self.resolution_combo.currentData(),
         }
 
     def _run(self):
@@ -725,7 +738,9 @@ class VDI4655Tab(QWidget):
         self.status_lbl.setText("Berechnung läuft …")
         self.plot.clear()
 
-        self._worker = CalcWorker(vdi4655_calculate, self._build_params())
+        params = self._build_params()
+        self._result_hourly = params["resolution"] == "1h"
+        self._worker = CalcWorker(vdi4655_calculate, params)
         self._worker.result_ready.connect(self._on_done)
         self._worker.error.connect(self._on_error)
         self._worker.start()
@@ -736,11 +751,12 @@ class VDI4655Tab(QWidget):
         self.export_btn.setEnabled(True)
         heat = df["Q_total_kWh"].sum()
         elec = df["Q_electricity_kWh"].sum()
+        steps = "Stundenwerte" if self._result_hourly else "Viertelstundenwerte"
         self.status_lbl.setText(
             f"Fertig.  Wärme: {heat:,.0f} kWh/a  |  Strom: {elec:,.0f} kWh/a  |  "
-            f"{len(df)} Viertelstundenwerte"
+            f"{len(df)} {steps}"
         )
-        self.plot.plot_vdi4655(df)
+        self.plot.plot_vdi4655(df, hourly=self._result_hourly)
 
     def _on_error(self, msg):
         self.run_btn.setEnabled(True)
@@ -770,7 +786,7 @@ class MainWindow(QMainWindow):
 
         tabs = QTabWidget()
         tabs.addTab(BDEWTab(), "BDEW SigLinDe (stündlich)")
-        tabs.addTab(VDI4655Tab(), "VDI 4655 (15-Minuten)")
+        tabs.addTab(VDI4655Tab(), "VDI 4655")
         self.setCentralWidget(tabs)
 
         self.statusBar().showMessage(

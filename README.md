@@ -6,7 +6,7 @@ heat demand profile standards for district heating simulations.
 | Module | Standard | Resolution | Method |
 |--------|----------|------------|--------|
 | `bdew` | BDEW/VKU/GEODE SigLinDe | Hourly | Temperature-continuous sigmoid + linear |
-| `vdi4655` | VDI 4655 | 15-minute | Day-type step profiles |
+| `vdi4655` | VDI 4655 | 15-minute or hourly | Day-type step profiles |
 
 ## Installation
 
@@ -37,6 +37,8 @@ print(df["Q_total_kWh"].max())   # → peak load [kWh/h]
 Both functions return a `pandas.DataFrame` with a `DatetimeIndex` and columns
 `Q_heat_kWh`, `Q_dhw_kWh`, `Q_total_kWh`, `temperature_C`
 (VDI 4655 additionally includes `Q_electricity_kWh`).
+BDEW profiles are hourly; VDI 4655 profiles are quarter-hourly by default and
+hourly with `resolution="1h"`, so that both can be combined directly.
 
 ## GUI – no scripting required
 
@@ -61,7 +63,7 @@ The application has two tabs — one for each calculation standard:
 | Tab | Standard | Output resolution |
 |-----|----------|-------------------|
 | BDEW SigLinDe | BDEW/VKU/GEODE SigLinDe | Hourly (8 760 values, 8 784 in leap years) |
-| VDI 4655 | VDI 4655 | 15-minute (35 040 values, 35 136 in leap years) |
+| VDI 4655 | VDI 4655 | 15-minute (35 040 values, 35 136 in leap years) or hourly |
 
 Both tabs offer the full parameter set including stochastic post-processing,
 discrete DHW draw events (BDEW), and automatic import of statutory German
@@ -125,16 +127,11 @@ change.
   scaling (modes B and C) needs both values. If `annual_heat_kWh` and only
   `peak_design_kW` are given, the profile is scaled by annual energy alone and
   no warning is issued.
-- **The two modules return different time steps.** BDEW profiles are hourly
-  (8760 values), VDI 4655 profiles quarter-hourly (35 040 values). They cannot
-  be stacked into one array without resampling.
 
 Effects on [DistrictHeatingSim](https://github.com/JonasPfeiffer123/DistrictHeatingSim):
 
 - Its optional `P_max` column is passed as `peak_design_kW` without
   `design_temperature` and therefore has no effect at present.
-- Its `Datensatz` mode fails for a portfolio that mixes `EFH`/`MFH` buildings
-  (VDI 4655) with BDEW building types, because of the different time steps.
 
 ## Documentation
 

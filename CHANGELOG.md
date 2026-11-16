@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] — 2026-11-16
+
+### Added
+- `vdi4655.calculate(..., resolution="1h")` returns hourly instead of
+  quarter-hourly values: the four quarter-hours of each hour are added up, so
+  the result has the same time steps as `bdew.calculate()` (8 760 values,
+  8 784 in leap years) and profiles of both modules can be combined without
+  resampling. Values are kWh per hour (= mean power in kW), the annual sums are
+  those of the quarter-hourly result. The default `resolution="15min"` is
+  unchanged ([#2](https://github.com/JonasPfeiffer123/pyslpheat/issues/2))
+- GUI: the VDI 4655 tab offers the resolution (15 minutes or 1 hour)
+
+### Changed
+- GUI: the VDI 4655 tab is titled "VDI 4655" instead of "VDI 4655 (15-Minuten)"
+
+### Documentation
+- README: the different time steps of the two modules are no longer listed as
+  a known issue
+
 ## [0.5.0] — 2026-11-16
 
 ### Changed

@@ -1,7 +1,7 @@
 # pyslpheat – Documentation
 
 Load profile generation for district heating simulations.
-Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 4655** (15-min, day-type based).
+Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 4655** (15-min or hourly, day-type based).
 
 ---
 
@@ -24,6 +24,7 @@ Implements two German standards: **BDEW** (hourly, climate-dependent) and **VDI 
 3. [VDI 4655 module](#vdi-4655-module)
    - [Standard call](#standard-call-1)
    - [Return value](#return-value-1)
+     - [Hourly results](#hourly-results-resolution1h)
    - [Parameters](#parameters)
    - [Day-type classification](#day-type-classification)
 4. [TRY weather data](#try-weather-data)
@@ -456,10 +457,22 @@ A `pd.DataFrame` with a **15-minute** `DatetimeIndex` (35 040 rows, 35 136 in le
 | `Q_electricity_kWh` | kWh/15min | Electricity |
 | `temperature_C` | °C | Hourly TRY temperature (repeated ×4) |
 
-Resample to hourly for further processing:
+#### Hourly results (`resolution="1h"`)
+
+VDI 4655 defines its profiles in 15-minute steps, which is the default. With
+`resolution="1h"` the four quarter-hours of each hour are added up:
+
 ```python
-df_hourly = df[["Q_heat_kWh", "Q_dhw_kWh", "Q_total_kWh"]].resample("h").sum()
+df = vdi4655_calculate(..., resolution="1h")
 ```
+
+- 8 760 rows (8 784 in leap years) with an hourly `DatetimeIndex`, the same
+  time steps as `bdew_calculate()`, so profiles of both modules can be stacked
+  or added without resampling
+- energy columns in kWh per hour (= mean power in kW); the annual sums are the
+  same as in the 15-minute result
+- `Q_total_kWh` is exactly `Q_heat_kWh + Q_dhw_kWh`, as in the 15-minute result
+- `temperature_C` holds the hourly TRY temperature
 
 ### Parameters
 
@@ -474,6 +487,7 @@ df_hourly = df[["Q_heat_kWh", "Q_dhw_kWh", "Q_total_kWh"]].resample("h").sum()
 | `climate_zone` | str `"1"`–`"15"` | DWD climate zone; zone 9 = central Germany |
 | `TRY` | str | Path to DWD TRY `.dat` file (provides temperature and cloud cover) |
 | `holidays` | `np.ndarray[datetime64[D]]` | Public holiday dates → treated as Sundays in day-type classification |
+| `resolution` | `"15min"` (default), `"1h"` | Time step of the result; `"1h"` adds up the quarter-hours of each hour (see [Hourly results](#hourly-results-resolution1h)) |
 
 ### Day-type classification
 
@@ -677,7 +691,8 @@ stochastische Nachbearbeitung (Seed, σ-Werte, max. Peak-Verschiebung).
 ![VDI 4655 tab](img/pyslpheat_gui_VDI4655.jpg)
 
 Alle Parameter aus `vdi4655_calculate()` sind einstellbar: Gebäudetyp,
-Personenzahl, Jahr, Klimazone, Jahresenergien für Raumwärme, TWW und Strom.
+Personenzahl, Jahr, Klimazone, Auflösung (15 Minuten oder 1 Stunde),
+Jahresenergien für Raumwärme, TWW und Strom.
 Feiertage können manuell eingegeben oder per Knopfdruck als gesetzliche
 deutsche Feiertage für das gewählte Jahr automatisch befüllt werden.
 

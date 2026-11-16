@@ -455,7 +455,8 @@ def calculate(annual_heating_kWh: float,
              year: int,
              climate_zone: str,
              TRY: str,
-             holidays: np.ndarray) -> pd.DataFrame:
+             holidays: np.ndarray,
+             resolution: str = "15min") -> pd.DataFrame:
     """
     Calculate VDI 4655 building energy demand profiles.
 
@@ -478,12 +479,17 @@ def calculate(annual_heating_kWh: float,
     :type TRY: str
     :param holidays: Holiday dates array
     :type holidays: np.ndarray
-    :return: DataFrame with 15-min DatetimeIndex and columns
+    :param resolution: Time step of the result: ``"15min"`` (default) as defined
+        by VDI 4655, or ``"1h"``, where the four quarter-hours of each hour are
+        added up. Hourly results have the same time steps as ``bdew.calculate()``
+    :type resolution: str
+    :return: DataFrame with a DatetimeIndex in the chosen resolution and columns
         ``Q_heat_kWh``, ``Q_dhw_kWh``, ``Q_total_kWh``, ``Q_electricity_kWh``,
-        ``temperature_C``. Values are energy per 15-min interval [kWh].
+        ``temperature_C``. Values are energy per time step [kWh], i.e. per
+        15 min or, with ``"1h"``, per hour (= mean power in kW).
     :rtype: pd.DataFrame
-    :raises ValueError: If parameters invalid or negative, or the weather data does
-        not fit the year
+    :raises ValueError: If parameters invalid or negative, the resolution is
+        unknown, or the weather data does not fit the year
     :raises FileNotFoundError: If TRY or VDI 4655 data missing
     :raises RuntimeError: If calculation fails
     """
@@ -497,7 +503,11 @@ def calculate(annual_heating_kWh: float,
     valid_building_types = ["EFH", "MFH"]
     if building_type not in valid_building_types:
         raise ValueError(f"Building type must be one of {valid_building_types}")
-    
+
+    valid_resolutions = ["15min", "1h"]
+    if resolution not in valid_resolutions:
+        raise ValueError(f"Resolution must be one of {valid_resolutions}, got {resolution!r}")
+
     # Execute VDI 4655 calculation
     time_15min, electricity_kWh_15min, heating_kWh_15min, hot_water_kWh_15min, temperature = \
         calculation_load_profile(
@@ -527,12 +537,28 @@ def calculate(annual_heating_kWh: float,
         _log.warning("Electricity energy balance error: %.0f vs %.0f kWh",
                      electricity_kWh_15min.sum(), annual_electricity_kWh)
 
-    # numpy's datetime64[15m] is not a standard unit — build the index with
-    # pandas to guarantee correct 15-minute spacing.
     n_intervals = len(time_15min)
-    idx = pd.date_range(f"{year}-01-01", periods=n_intervals, freq="15min")
     # Expand hourly temperature to 15-min resolution for the output column
     temp_15min = np.repeat(temperature, 4)[:n_intervals]
+
+    if resolution == "1h":
+        # Add up each hour's four quarter-hours: kWh per hour, the annual sums stay
+        def to_hours(values_15min):
+            return values_15min.reshape(-1, 4).sum(axis=1)
+
+        heating_kWh_h = to_hours(heating_kWh_15min)
+        hot_water_kWh_h = to_hours(hot_water_kWh_15min)
+        return pd.DataFrame({
+            "Q_heat_kWh":        heating_kWh_h,
+            "Q_dhw_kWh":         hot_water_kWh_h,
+            "Q_total_kWh":       heating_kWh_h + hot_water_kWh_h,
+            "Q_electricity_kWh": to_hours(electricity_kWh_15min),
+            "temperature_C":     temp_15min[::4],
+        }, index=pd.date_range(f"{year}-01-01", periods=n_intervals // 4, freq="h"))
+
+    # numpy's datetime64[15m] is not a standard unit — build the index with
+    # pandas to guarantee correct 15-minute spacing.
+    idx = pd.date_range(f"{year}-01-01", periods=n_intervals, freq="15min")
 
     return pd.DataFrame({
         "Q_heat_kWh":        heating_kWh_15min,
