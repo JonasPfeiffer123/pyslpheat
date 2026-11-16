@@ -44,7 +44,7 @@ pyslpheat ships a desktop application that lets you configure all parameters
 interactively, inspect the resulting load profile in an embedded plot, and
 export results as CSV — without writing a single line of code.
 
-**Install with GUI dependencies:**
+**Install with GUI dependencies** (PySide6 and matplotlib):
 
 ```bash
 pip install ".[gui]"

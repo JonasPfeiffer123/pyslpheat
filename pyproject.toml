@@ -41,7 +41,7 @@ Documentation = "https://github.com/JonasPfeiffer123/pyslpheat/blob/main/docs/DO
 "Bug Tracker" = "https://github.com/JonasPfeiffer123/pyslpheat/issues"
 
 [project.optional-dependencies]
-gui = ["PyQt6>=6.5", "matplotlib>=3.7"]
+gui = ["PySide6-Essentials>=6.5", "matplotlib>=3.7"]
 dev = ["matplotlib>=3.7", "pytest>=7"]
 
 [project.scripts]

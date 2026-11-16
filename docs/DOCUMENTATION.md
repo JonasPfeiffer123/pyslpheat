@@ -39,7 +39,7 @@ pip install .          # from the package root
 # or editable install during development:
 pip install -e .
 
-# with GUI (PyQt6 desktop application):
+# with GUI (PySide6 desktop application):
 pip install ".[gui]"
 ```
 
@@ -652,13 +652,14 @@ build their own on first use.
 
 ## GUI – Desktop-Anwendung
 
-pyslpheat enthält eine grafische Oberfläche (PyQt6), die den vollständigen
-Parametersatz beider Module ohne Scripting zugänglich macht.
+pyslpheat enthält eine grafische Oberfläche (PySide6, Qt for Python unter
+LGPLv3), die den vollständigen Parametersatz beider Module ohne Scripting
+zugänglich macht.
 
 ### Installation & Start
 
 ```bash
-pip install ".[gui]"   # PyQt6 + matplotlib werden mitinstalliert
+pip install ".[gui]"   # PySide6 + matplotlib werden mitinstalliert
 pyslpheat-gui
 ```
 

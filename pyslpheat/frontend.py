@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""PyQt6 GUI-Frontend für pyslpheat – Wärmelastprofil-Generator."""
+"""PySide6 GUI-Frontend für pyslpheat – Wärmelastprofil-Generator."""
 
 import sys
 import numpy as np
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTabWidget,
     QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QSpinBox, QDoubleSpinBox, QCheckBox,
@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QFileDialog, QListWidget, QMessageBox, QRadioButton,
     QButtonGroup,
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PySide6.QtCore import Qt, QThread, Signal
 
 import matplotlib
 matplotlib.use("QtAgg")
@@ -93,8 +93,9 @@ VDI_BUILDING_TYPES = {
 # ── Worker-Threads ───────────────────────────────────────────────────────────
 
 class CalcWorker(QThread):
-    finished = pyqtSignal(object)
-    error = pyqtSignal(str)
+    # Not "finished": that would shadow QThread.finished
+    result_ready = Signal(object)
+    error = Signal(str)
 
     def __init__(self, fn, params):
         super().__init__()
@@ -104,7 +105,7 @@ class CalcWorker(QThread):
     def run(self):
         try:
             result = self._fn(**self._params)
-            self.finished.emit(result)
+            self.result_ready.emit(result)
         except Exception as exc:
             self.error.emit(str(exc))
 
@@ -499,7 +500,7 @@ class BDEWTab(QWidget):
         self.plot.clear()
 
         self._worker = CalcWorker(bdew_calculate, self._build_params())
-        self._worker.finished.connect(self._on_done)
+        self._worker.result_ready.connect(self._on_done)
         self._worker.error.connect(self._on_error)
         self._worker.start()
 
@@ -725,7 +726,7 @@ class VDI4655Tab(QWidget):
         self.plot.clear()
 
         self._worker = CalcWorker(vdi4655_calculate, self._build_params())
-        self._worker.finished.connect(self._on_done)
+        self._worker.result_ready.connect(self._on_done)
         self._worker.error.connect(self._on_error)
         self._worker.start()
 
