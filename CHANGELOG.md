@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] — 2026-11-16
+
+### Changed
+- GUI: built on PySide6 (Qt for Python, LGPLv3) instead of PyQt6 (GPLv3 or
+  commercial), whose licence did not fit the MIT licence of the package. The
+  `[gui]` extra installs `PySide6-Essentials>=6.5` instead of `PyQt6>=6.5`;
+  look and behaviour of the GUI are unchanged. An existing PyQt6 installation
+  is no longer used and can be removed
+- The funding logo is no longer installed with the package; it is only shown
+  in the README and now lives in `docs/img`, as an sRGB JPEG of 54 KiB
+  instead of a CMYK JPEG of 782 KiB
+
+Calculation functions and results are unchanged.
+
 ## [0.4.5] — 2026-10-13
 
 ### Fixed

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name        = "pyslpheat"
-version     = "0.4.5"
+version     = "0.5.0"
 description = "BDEW and VDI 4655 heat demand load profiles for district heating simulations"
 readme      = "README.md"
 requires-python = ">=3.9"
@@ -41,7 +41,7 @@ Documentation = "https://github.com/JonasPfeiffer123/pyslpheat/blob/main/docs/DO
 "Bug Tracker" = "https://github.com/JonasPfeiffer123/pyslpheat/issues"
 
 [project.optional-dependencies]
-gui = ["PyQt6>=6.5", "matplotlib>=3.7"]
+gui = ["PySide6-Essentials>=6.5", "matplotlib>=3.7"]
 dev = ["matplotlib>=3.7", "pytest>=7"]
 
 [project.scripts]
