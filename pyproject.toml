@@ -57,7 +57,6 @@ pyslpheat = [
     "data/vdi4655/*.csv",
     "data/vdi4655/load_profiles/*.csv",
     "data/try/*.dat",
-    "images/*",
 ]
 
 [tool.pytest.ini_options]

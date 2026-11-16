@@ -224,7 +224,7 @@ Hochschule Zittau/Görlitz.
 
 ### Funding
 
-![Funding notice — Saxony / EU](pyslpheat/images/funding_saxony_EU.jpg)
+![Funding notice — Saxony / EU](docs/img/funding_saxony_EU.jpg)
 
 ## License
 
